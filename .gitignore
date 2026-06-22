@@ -1,0 +1,23 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build output
+dist
+.next
+out
+
+# env / secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# logs & coverage
+*.log
+coverage
+
+# os/editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

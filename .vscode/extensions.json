@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "Prisma.prisma",
+    "ckolkman.vscode-postgres",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss"
+  ]
+}
