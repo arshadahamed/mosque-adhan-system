@@ -1,0 +1,37 @@
+{
+  "name": "@mawaqit/api",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -b",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "lint": "echo ok",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@mawaqit/shared": "workspace:*",
+    "express": "^4.21.0",
+    "helmet": "^8.0.0",
+    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.7",
+    "zod": "^3.23.8",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^22.7.0",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0",
+    "typescript": "^5.6.0"
+  }
+}
