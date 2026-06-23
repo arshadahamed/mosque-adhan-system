@@ -8,6 +8,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import mosqueRoutes from "./modules/mosque/mosque.routes.js";
 import prayerRoutes from "./modules/prayer/prayer.routes.js";
 import widgetRoutes from "./modules/prayer/widget.routes.js";
+import contentRoutes from "./modules/content/content.routes.js";
 
 export function createApp(): Express {
   const app = express();
@@ -29,6 +30,7 @@ export function createApp(): Express {
   app.use("/api/v1/mosques", mosqueRoutes);
   app.use("/api/v1/mosques/:mosqueId/prayer-times", prayerRoutes);
   app.use("/api/v1/mosques/:mosqueId/widget", widgetRoutes);
+  app.use("/api/v1/mosques/:mosqueId", contentRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
