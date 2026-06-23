@@ -1,0 +1,309 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  MOSQUE_ADMIN
+  STAFF
+  PUBLIC
+}
+
+enum MosqueType {
+  MOSQUE
+  MUSALLA
+  HOME
+}
+
+enum MosqueStatus {
+  ONLINE
+  OFFLINE
+}
+
+enum ScheduleSource {
+  CALENDAR
+  CALCULATION
+  FIXED
+}
+
+enum AnnouncementType {
+  IMAGE
+  TEXT
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String
+  firstName        String?
+  lastName         String?
+  locale           String   @default("en")
+  role             Role     @default(PUBLIC)
+  emailVerified    Boolean  @default(false)
+  twoFactorEnabled Boolean  @default(false)
+  status           String   @default("active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  mosqueLinks   MosqueUser[]
+  refreshTokens RefreshToken[]
+  sessions      Session[]
+  favorites     Favorite[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+}
+
+model MosqueUser {
+  id       String @id @default(cuid())
+  userId   String
+  mosqueId String
+  role     Role
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mosqueId])
+  @@index([mosqueId])
+}
+
+model Mosque {
+  id               String       @id @default(cuid())
+  slug             String       @unique
+  name             String
+  type             MosqueType   @default(MOSQUE)
+  address          String
+  city             String
+  zipcode          String
+  countryCode      String
+  latitude         Float
+  longitude        Float
+  timezone         String
+  phone            String?
+  email            String?
+  website          String?
+  paymentUrl       String?
+  associationName  String?
+  logoUrl          String?
+  showOnMap        Boolean      @default(false)
+  status           MosqueStatus @default(OFFLINE)
+  facilities       Json         @default("{}")
+  capacityMen      Int?
+  capacityWomen    Int?
+  constructionYear Int?
+  history          String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  config        MosqueConfig?
+  subscription  Subscription?
+  schedules     PrayerSchedule[]
+  announcements Announcement[]
+  flashMessages FlashMessage[]
+  events        Event[]
+  images        MosqueImage[]
+  favorites     Favorite[]
+  users         MosqueUser[]
+
+  @@index([city])
+  @@index([countryCode])
+  @@index([latitude, longitude])
+}
+
+model MosqueConfig {
+  id        String @id @default(cuid())
+  mosqueId  String @unique
+  regional  Json   @default("{}")
+  athan     Json   @default("{}")
+  iqama     Json   @default("{}")
+  jumua     Json   @default("{}")
+  display   Json   @default("{}")
+  eid       Json   @default("{}")
+  content   Json   @default("{}")
+  durations Json   @default("{}")
+
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+}
+
+model PrayerSchedule {
+  id       String         @id @default(cuid())
+  mosqueId String
+  source   ScheduleSource @default(CALENDAR)
+  method   String?
+  year     Int
+
+  mosque Mosque      @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+  days   PrayerDay[]
+
+  @@unique([mosqueId, year])
+}
+
+model PrayerDay {
+  id         String @id @default(cuid())
+  scheduleId String
+  month      Int
+  day        Int
+  fajr       String
+  shuruq     String
+  dhuhr      String
+  asr        String
+  maghrib    String
+  isha       String
+
+  schedule PrayerSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, month, day])
+  @@index([scheduleId, month])
+}
+
+model Announcement {
+  id           String           @id @default(cuid())
+  mosqueId     String
+  title        String
+  type         AnnouncementType @default(TEXT)
+  content      String?
+  imageUrl     String?
+  orientation  String           @default("landscape")
+  isEvent      Boolean          @default(false)
+  startsAt     DateTime?
+  endsAt       DateTime?
+  durationSec  Int              @default(30)
+  enabled      Boolean          @default(true)
+  onMainScreen Boolean          @default(true)
+  onMobile     Boolean          @default(true)
+  sortOrder    Int              @default(0)
+  createdAt    DateTime         @default(now())
+
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+
+  @@index([mosqueId, enabled])
+}
+
+model FlashMessage {
+  id       String  @id @default(cuid())
+  mosqueId String
+  content  String
+  enabled  Boolean @default(true)
+
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+
+  @@index([mosqueId])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  mosqueId    String
+  title       String
+  description String?
+  category    String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  imageUrl    String?
+
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+
+  @@index([mosqueId, startsAt])
+}
+
+model MosqueImage {
+  id       String @id @default(cuid())
+  mosqueId String
+  url      String
+  kind     String @default("gallery")
+
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+
+  @@index([mosqueId])
+}
+
+model Favorite {
+  id       String @id @default(cuid())
+  userId   String
+  mosqueId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mosqueId])
+  @@index([mosqueId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String?
+  type      String
+  channel   String    @default("EMAIL")
+  payload   Json      @default("{}")
+  readAt    DateTime?
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entity      String
+  entityId    String?
+  metadata    Json     @default("{}")
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([actorUserId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  family    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  ip         String?
+  userAgent  String?
+  lastSeenAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json   @default("{}")
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  mosqueId         String    @unique
+  plan             String    @default("free")
+  status           String    @default("active")
+  currentPeriodEnd DateTime?
+
+  mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+}
