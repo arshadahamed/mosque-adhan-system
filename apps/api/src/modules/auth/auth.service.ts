@@ -103,11 +103,15 @@ export async function verifyTwoFactor(
 
 // ─── Setup 2FA ────────────────────────────────────────────────────────────────
 
-export async function setupTwoFactor(userId: string, currentCode?: string) {
+export async function setupTwoFactor(userId: string, password: string, currentCode?: string) {
   const user = await repo.findUserById(userId);
   if (!user) throw new AppError(404, "NOT_FOUND", "User not found");
 
-  // If 2FA is already active, require the current TOTP before re-enrollment
+  // Always require password re-verification to prevent enrollment via stolen access token
+  const validPassword = await bcrypt.compare(password, user.passwordHash);
+  if (!validPassword) throw new AppError(401, "INVALID_CREDENTIALS", "Password is incorrect");
+
+  // If 2FA is already active, also require current TOTP before re-enrollment
   if (user.twoFactorEnabled) {
     if (!currentCode) throw new AppError(400, "TOTP_REQUIRED", "Provide current 2FA code to re-enroll");
     if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, currentCode)) {
@@ -240,6 +244,8 @@ export async function resetPassword(token: string, newPassword: string) {
   const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
   await repo.updateUser(userId, { passwordHash });
   await repo.deleteTokenSetting(`pwd_reset:${token}`);
+  await repo.revokeAllUserTokens(userId);
+  await repo.deleteAllUserSessions(userId);
   return { reset: true };
 }
 
@@ -254,6 +260,8 @@ export async function changePassword(userId: string, oldPassword: string, newPas
 
   const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
   await repo.updateUser(userId, { passwordHash });
+  await repo.revokeAllUserTokens(userId);
+  await repo.deleteAllUserSessions(userId);
   return { changed: true };
 }
 

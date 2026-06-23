@@ -45,6 +45,15 @@ export const deleteExpiredTokens = (userId: string) =>
     where: { userId, expiresAt: { lt: new Date() } },
   });
 
+export const revokeAllUserTokens = (userId: string) =>
+  prisma.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+
+export const deleteAllUserSessions = (userId: string) =>
+  prisma.session.deleteMany({ where: { userId } });
+
 // Sessions
 export const upsertSession = (data: {
   id: string;

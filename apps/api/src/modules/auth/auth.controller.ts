@@ -83,8 +83,11 @@ export async function verifyTwoFactor(req: Request, res: Response, next: NextFun
 // POST /auth/2fa/setup
 export async function setupTwoFactor(req: Request, res: Response, next: NextFunction) {
   try {
-    const { currentCode } = z.object({ currentCode: z.string().length(6).optional() }).parse(req.body);
-    const data = await svc.setupTwoFactor((req as any).user.sub, currentCode);
+    const { password, currentCode } = z.object({
+      password: z.string().min(1, "Password required"),
+      currentCode: z.string().length(6).optional(),
+    }).parse(req.body);
+    const data = await svc.setupTwoFactor((req as any).user.sub, password, currentCode);
     res.json({ success: true, data });
   } catch (e) { next(e); }
 }
