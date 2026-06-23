@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { env } from "./config/env.js";
 import { notFound, errorHandler } from "./middleware/error.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import mosqueRoutes from "./modules/mosque/mosque.routes.js";
 
 export function createApp(): Express {
   const app = express();
@@ -23,6 +24,7 @@ export function createApp(): Express {
   });
 
   app.use("/api/v1/auth", authRoutes);
+  app.use("/api/v1/mosques", mosqueRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

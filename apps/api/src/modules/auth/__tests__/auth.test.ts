@@ -114,7 +114,7 @@ describe("POST /api/v1/auth/login", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.user.email).toBe("login@example.com");
-    const cookies = res.headers["set-cookie"] as string[];
+    const cookies = (res.headers["set-cookie"] as unknown as string[]) ?? [];
     expect(cookies.some((c: string) => c.startsWith("refresh_token="))).toBe(true);
   });
 });
@@ -142,7 +142,7 @@ describe("POST /api/v1/auth/logout", () => {
   it("clears cookies and returns loggedOut", async () => {
     await request(app).post("/api/v1/auth/register").send({ email: "logout@example.com", password: "Password1!" });
     const loginRes = await request(app).post("/api/v1/auth/login").send({ email: "logout@example.com", password: "Password1!" });
-    const cookie = (loginRes.headers["set-cookie"] as string[]).find((c: string) => c.startsWith("refresh_token="))!;
+    const cookie = ((loginRes.headers["set-cookie"] as unknown as string[]) ?? []).find((c: string) => c.startsWith("refresh_token="))!;
 
     const res = await request(app).post("/api/v1/auth/logout").set("Cookie", cookie);
     expect(res.status).toBe(200);
