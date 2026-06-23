@@ -51,7 +51,7 @@ export async function uploadSchedule(req: Request, res: Response, next: NextFunc
       days: z.array(daySchema).min(1),
     }).parse(req.body);
 
-    const data = await svc.uploadSchedule(req.params.mosqueId, body);
+    const data = await svc.uploadSchedule(req.params.mosqueId, body, req.user!.sub, req.user!.role);
     res.status(201).json({ success: true, data });
   } catch (e) { next(e); }
 }
@@ -67,7 +67,7 @@ export async function updateDay(req: Request, res: Response, next: NextFunction)
       asr: timeSchema, maghrib: timeSchema, isha: timeSchema,
     }).parse(req.body);
 
-    const data = await svc.updateDay(req.params.mosqueId, year, month, day, times);
+    const data = await svc.updateDay(req.params.mosqueId, year, month, day, times, req.user!.sub, req.user!.role);
     res.json({ success: true, data });
   } catch (e) { next(e); }
 }

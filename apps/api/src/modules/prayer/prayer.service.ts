@@ -1,6 +1,12 @@
 import { AppError } from "../../middleware/error.js";
 import * as repo from "./prayer.repository.js";
-import { findMosqueById } from "../mosque/mosque.repository.js";
+import { findMosqueById, findMosqueUser } from "../mosque/mosque.repository.js";
+
+async function assertMosqueAccess(userId: string, mosqueId: string, role: string) {
+  if (role === "SUPER_ADMIN") return;
+  const link = await findMosqueUser(userId, mosqueId);
+  if (!link) throw new AppError(403, "FORBIDDEN", "You do not have access to this mosque");
+}
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -53,10 +59,13 @@ export async function uploadSchedule(
       maghrib: string;
       isha: string;
     }>;
-  }
+  },
+  requesterId: string,
+  requesterRole: string
 ) {
   const mosque = await findMosqueById(mosqueId);
   if (!mosque) throw new AppError(404, "NOT_FOUND", "Mosque not found");
+  await assertMosqueAccess(requesterId, mosqueId, requesterRole);
 
   const FIELDS = ["fajr", "shuruq", "dhuhr", "asr", "maghrib", "isha"] as const;
 
@@ -82,8 +91,11 @@ export async function updateDay(
   year: number,
   month: number,
   day: number,
-  times: { fajr: string; shuruq: string; dhuhr: string; asr: string; maghrib: string; isha: string }
+  times: { fajr: string; shuruq: string; dhuhr: string; asr: string; maghrib: string; isha: string },
+  requesterId: string,
+  requesterRole: string
 ) {
+  await assertMosqueAccess(requesterId, mosqueId, requesterRole);
   const FIELDS = ["fajr", "shuruq", "dhuhr", "asr", "maghrib", "isha"] as const;
   for (const f of FIELDS) validateTime(times[f], f);
 

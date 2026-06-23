@@ -27,7 +27,9 @@ export function signRefreshToken(payload: Omit<RefreshTokenPayload, "type">): st
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  return jwt.verify(token, env.JWT_SECRET) as AccessTokenPayload;
+  const payload = jwt.verify(token, env.JWT_SECRET) as AccessTokenPayload;
+  if ((payload as any).type !== "access") throw new Error("Invalid token type");
+  return payload;
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
