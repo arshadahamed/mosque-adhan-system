@@ -34,6 +34,16 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
   return jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshTokenPayload;
 }
 
+export function signMfaChallengeToken(userId: string): string {
+  return jwt.sign({ sub: userId, purpose: "mfa" }, env.JWT_SECRET, { expiresIn: "5m" });
+}
+
+export function verifyMfaChallengeToken(token: string): { sub: string; purpose: string } {
+  const payload = jwt.verify(token, env.JWT_SECRET) as { sub: string; purpose: string };
+  if (payload.purpose !== "mfa") throw new Error("Invalid token purpose");
+  return payload;
+}
+
 export function decodeToken(token: string): jwt.JwtPayload | null {
   return jwt.decode(token) as jwt.JwtPayload | null;
 }

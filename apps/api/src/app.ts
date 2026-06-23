@@ -6,6 +6,8 @@ import { env } from "./config/env.js";
 import { notFound, errorHandler } from "./middleware/error.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import mosqueRoutes from "./modules/mosque/mosque.routes.js";
+import prayerRoutes from "./modules/prayer/prayer.routes.js";
+import widgetRoutes from "./modules/prayer/widget.routes.js";
 
 export function createApp(): Express {
   const app = express();
@@ -25,6 +27,8 @@ export function createApp(): Express {
 
   app.use("/api/v1/auth", authRoutes);
   app.use("/api/v1/mosques", mosqueRoutes);
+  app.use("/api/v1/mosques/:mosqueId/prayer-times", prayerRoutes);
+  app.use("/api/v1/mosques/:mosqueId/widget", widgetRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

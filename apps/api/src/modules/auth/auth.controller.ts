@@ -69,7 +69,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 export async function verifyTwoFactor(req: Request, res: Response, next: NextFunction) {
   try {
     const body = z.object({
-      userId: z.string(),
+      mfaToken: z.string(),
       code: z.string().length(6),
     }).parse(req.body);
 
@@ -83,7 +83,8 @@ export async function verifyTwoFactor(req: Request, res: Response, next: NextFun
 // POST /auth/2fa/setup
 export async function setupTwoFactor(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await svc.setupTwoFactor((req as any).user.sub);
+    const { currentCode } = z.object({ currentCode: z.string().length(6).optional() }).parse(req.body);
+    const data = await svc.setupTwoFactor((req as any).user.sub, currentCode);
     res.json({ success: true, data });
   } catch (e) { next(e); }
 }

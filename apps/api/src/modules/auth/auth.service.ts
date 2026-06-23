@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import { AppError } from "../../middleware/error.js";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../lib/jwt.js";
+import { signAccessToken, signRefreshToken, verifyRefreshToken, signMfaChallengeToken, verifyMfaChallengeToken } from "../../lib/jwt.js";
 import { sendMail, emailVerifyHtml, passwordResetHtml } from "../../lib/email.js";
 import { generateTotpSecret, totpQrDataUrl, verifyTotp } from "../../lib/totp.js";
 import * as repo from "./auth.repository.js";
@@ -70,7 +70,9 @@ export async function login(
   if (!valid) throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
 
   if (user.twoFactorEnabled) {
-    return { requiresTwoFactor: true, userId: user.id };
+    // Issue a short-lived MFA challenge token — never expose the raw userId
+    const mfaToken = signMfaChallengeToken(user.id);
+    return { requiresTwoFactor: true, mfaToken };
   }
 
   return issueTokens(user, meta);
@@ -79,10 +81,17 @@ export async function login(
 // ─── 2FA verify ───────────────────────────────────────────────────────────────
 
 export async function verifyTwoFactor(
-  data: { userId: string; code: string },
+  data: { mfaToken: string; code: string },
   meta: { ip?: string; userAgent?: string; sessionId?: string }
 ) {
-  const user = await repo.findUserById(data.userId);
+  let payload;
+  try {
+    payload = verifyMfaChallengeToken(data.mfaToken);
+  } catch {
+    throw new AppError(401, "INVALID_TOKEN", "MFA challenge token invalid or expired");
+  }
+
+  const user = await repo.findUserById(payload.sub);
   if (!user?.twoFactorEnabled) throw new AppError(400, "INVALID_REQUEST", "2FA not enabled");
 
   if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, data.code)) {
@@ -94,26 +103,46 @@ export async function verifyTwoFactor(
 
 // ─── Setup 2FA ────────────────────────────────────────────────────────────────
 
-export async function setupTwoFactor(userId: string) {
+export async function setupTwoFactor(userId: string, currentCode?: string) {
   const user = await repo.findUserById(userId);
   if (!user) throw new AppError(404, "NOT_FOUND", "User not found");
 
+  // If 2FA is already active, require the current TOTP before re-enrollment
+  if (user.twoFactorEnabled) {
+    if (!currentCode) throw new AppError(400, "TOTP_REQUIRED", "Provide current 2FA code to re-enroll");
+    if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, currentCode)) {
+      throw new AppError(401, "INVALID_TOTP", "Current 2FA code is incorrect");
+    }
+  }
+
   const { base32, otpauthUrl } = generateTotpSecret(user.email);
-  await repo.updateUser(userId, { twoFactorEnabled: false, twoFactorSecret: base32 });
+  // Store pending secret in Setting — do NOT touch twoFactorEnabled or twoFactorSecret yet
+  await repo.setTokenSetting(`totp_pending:${userId}`, {
+    secret: base32,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+  });
 
   const qrDataUrl = await totpQrDataUrl(otpauthUrl);
   return { secret: base32, qrDataUrl };
 }
 
 export async function confirmTwoFactor(userId: string, code: string) {
-  const user = await repo.findUserById(userId);
-  if (!user) throw new AppError(404, "NOT_FOUND", "User not found");
+  const setting = await repo.getTokenSetting(`totp_pending:${userId}`);
+  if (!setting) throw new AppError(400, "SETUP_REQUIRED", "No pending 2FA setup found; call /2fa/setup first");
 
-  if (!user.twoFactorSecret || !verifyTotp(user.twoFactorSecret, code)) {
+  const { secret, expiresAt } = setting.value as { secret: string; expiresAt: string };
+  if (new Date() > new Date(expiresAt)) {
+    await repo.deleteTokenSetting(`totp_pending:${userId}`);
+    throw new AppError(400, "TOKEN_EXPIRED", "2FA setup window expired; restart setup");
+  }
+
+  if (!verifyTotp(secret, code)) {
     throw new AppError(401, "INVALID_TOTP", "Invalid 2FA code");
   }
 
-  await repo.updateUser(userId, { twoFactorEnabled: true });
+  // Only now commit the new secret and enable 2FA
+  await repo.updateUser(userId, { twoFactorEnabled: true, twoFactorSecret: secret });
+  await repo.deleteTokenSetting(`totp_pending:${userId}`);
   return { enabled: true };
 }
 
