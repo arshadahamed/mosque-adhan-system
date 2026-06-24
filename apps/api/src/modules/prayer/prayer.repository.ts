@@ -53,9 +53,43 @@ export const upsertDay = (
     update: times,
   });
 
+export const upsertMonthDays = async (
+  mosqueId: string,
+  year: number,
+  month: number,
+  days: Array<{ day: number; fajr: string; shuruq: string; dhuhr: string; asr: string; maghrib: string; isha: string }>
+) => {
+  const schedule = await prisma.prayerSchedule.upsert({
+    where: { mosqueId_year: { mosqueId, year } },
+    create: { mosqueId, year, source: "CALENDAR" },
+    update: {},
+  });
+  await prisma.prayerDay.deleteMany({ where: { scheduleId: schedule.id, month } });
+  if (days.length > 0) {
+    await prisma.prayerDay.createMany({
+      data: days.map((d) => ({ scheduleId: schedule.id, month, ...d })),
+    });
+  }
+  return { scheduleId: schedule.id, year, month, dayCount: days.length };
+};
+
+export const deleteMonthDays = async (mosqueId: string, year: number, month: number) => {
+  const schedule = await prisma.prayerSchedule.findUnique({ where: { mosqueId_year: { mosqueId, year } } });
+  if (!schedule) return { deleted: 0 };
+  const { count } = await prisma.prayerDay.deleteMany({ where: { scheduleId: schedule.id, month } });
+  return { deleted: count };
+};
+
 export const listScheduleYears = (mosqueId: string) =>
   prisma.prayerSchedule.findMany({
     where: { mosqueId },
     select: { year: true, source: true, method: true },
     orderBy: { year: "desc" },
+  });
+
+export const findFlashMessages = (mosqueId: string) =>
+  prisma.flashMessage.findMany({
+    where: { mosqueId, enabled: true },
+    select: { content: true },
+    orderBy: { createdAt: "asc" },
   });

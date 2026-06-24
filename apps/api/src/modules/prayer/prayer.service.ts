@@ -33,7 +33,7 @@ export async function getScheduleForMonth(mosqueId: string, year: number, month:
   if (month < 1 || month > 12) throw new AppError(400, "INVALID_MONTH", "Month must be 1–12");
 
   const schedule = await repo.findScheduleWithDays(mosqueId, year);
-  if (!schedule) throw new AppError(404, "NO_SCHEDULE", "No prayer schedule for this year");
+  if (!schedule) return { year, month, source: "CALENDAR", method: null, days: [] };
 
   const days = schedule.days.filter(d => d.month === month);
   return { year, month, source: schedule.source, method: schedule.method, days };
@@ -105,6 +105,38 @@ export async function updateDay(
   return repo.upsertDay(schedule.id, month, day, times);
 }
 
+export async function bulkUpdateMonth(
+  mosqueId: string,
+  year: number,
+  month: number,
+  days: Array<{ day: number; fajr: string; shuruq: string; dhuhr: string; asr: string; maghrib: string; isha: string }>,
+  requesterId: string,
+  requesterRole: string
+) {
+  if (month < 1 || month > 12) throw new AppError(400, "INVALID_MONTH", "Month must be 1–12");
+  await assertMosqueAccess(requesterId, mosqueId, requesterRole);
+
+  const FIELDS = ["fajr", "shuruq", "dhuhr", "asr", "maghrib", "isha"] as const;
+  for (const d of days) {
+    if (d.day < 1 || d.day > 31) throw new AppError(400, "INVALID_DAY", `Invalid day ${d.day}`);
+    for (const f of FIELDS) validateTime(d[f], f);
+  }
+
+  return repo.upsertMonthDays(mosqueId, year, month, days);
+}
+
+export async function clearMonth(
+  mosqueId: string,
+  year: number,
+  month: number,
+  requesterId: string,
+  requesterRole: string
+) {
+  if (month < 1 || month > 12) throw new AppError(400, "INVALID_MONTH", "Month must be 1–12");
+  await assertMosqueAccess(requesterId, mosqueId, requesterRole);
+  return repo.deleteMonthDays(mosqueId, year, month);
+}
+
 export async function getWidgetData(mosqueId: string) {
   const mosque = await findMosqueById(mosqueId);
   if (!mosque) throw new AppError(404, "NOT_FOUND", "Mosque not found");
@@ -126,6 +158,8 @@ export async function getWidgetData(mosqueId: string) {
   const tomorrowResult = await repo.findDay(mosqueId, tYear, tMonth, tDay);
   const tomorrow = tomorrowResult?.days[0] ?? null;
 
+  const flashMessages = await repo.findFlashMessages(mosqueId);
+
   return {
     mosque: {
       id: mosque.id, slug: mosque.slug, name: mosque.name,
@@ -133,5 +167,6 @@ export async function getWidgetData(mosqueId: string) {
     },
     today: today ? { year, month, day, fajr: today.fajr, shuruq: today.shuruq, dhuhr: today.dhuhr, asr: today.asr, maghrib: today.maghrib, isha: today.isha } : null,
     tomorrow: tomorrow ? { year: tYear, month: tMonth, day: tDay, fajr: tomorrow.fajr, shuruq: tomorrow.shuruq, dhuhr: tomorrow.dhuhr, asr: tomorrow.asr, maghrib: tomorrow.maghrib, isha: tomorrow.isha } : null,
+    flashMessages,
   };
 }

@@ -117,16 +117,19 @@ model Mosque {
 }
 
 model MosqueConfig {
-  id        String @id @default(cuid())
-  mosqueId  String @unique
-  regional  Json   @default("{}")
-  athan     Json   @default("{}")
-  iqama     Json   @default("{}")
-  jumua     Json   @default("{}")
-  display   Json   @default("{}")
-  eid       Json   @default("{}")
-  content   Json   @default("{}")
-  durations Json   @default("{}")
+  id          String @id @default(cuid())
+  mosqueId    String @unique
+  regional    Json   @default("{}")
+  calculation Json   @default("{}")
+  offsets     Json   @default("{}")
+  athan       Json   @default("{}")
+  iqama       Json   @default("{}")
+  jumua       Json   @default("{}")
+  display     Json   @default("{}")
+  eid         Json   @default("{}")
+  content     Json   @default("{}")
+  durations   Json   @default("{}")
+  landscape   Json   @default("{}")
 
   mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
 }
@@ -186,10 +189,11 @@ model Announcement {
 }
 
 model FlashMessage {
-  id       String  @id @default(cuid())
-  mosqueId String
-  content  String
-  enabled  Boolean @default(true)
+  id        String    @id @default(cuid())
+  mosqueId  String
+  content   String
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
 
   mosque Mosque @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
 
