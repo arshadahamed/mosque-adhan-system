@@ -31,7 +31,7 @@ interface ToggleFieldProps {
   label: string;
   description?: string;
   checked: boolean;
-  onChange: (v: boolean) => void;
+  onChange?: (v: boolean) => void;
 }
 
 export function ToggleField({ label, description, checked, onChange }: ToggleFieldProps) {
