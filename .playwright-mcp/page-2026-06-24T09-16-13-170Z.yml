@@ -1,0 +1,97 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e138]:
+    - banner [ref=e139]:
+      - generic [ref=e141]:
+        - link "🕌 Mawaqit" [ref=e142] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e143]: 🕌
+          - generic [ref=e144]: Mawaqit
+        - link "🏠 Admin" [ref=e145] [cursor=pointer]:
+          - /url: /dashboard/mosques
+          - generic [ref=e146]: 🏠
+          - generic [ref=e147]: Admin
+        - button "🌐 Language ▾" [ref=e149]:
+          - text: 🌐 Language
+          - generic [ref=e150]: ▾
+        - link "♥ Support Mawaqit" [ref=e151] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e152]:
+          - link "👤 My profile" [ref=e153] [cursor=pointer]:
+            - /url: /dashboard/profile
+          - button "↩ Log out" [ref=e154]
+    - main [ref=e155]:
+      - generic [ref=e580]:
+        - generic [ref=e581]:
+          - generic [ref=e582]:
+            - link "◀ All mosques" [ref=e584] [cursor=pointer]:
+              - /url: /dashboard/mosques
+            - generic [ref=e585]:
+              - generic [ref=e586]: 🕌
+              - generic [ref=e587]:
+                - heading "Al Azhar Jumma Masjid" [level=1] [ref=e588]
+                - paragraph [ref=e589]:
+                  - generic [ref=e590]: ID gbvnvrwt
+                  - generic [ref=e591]: "|"
+                  - generic [ref=e592]: ONLINE
+          - link "Edit" [ref=e594] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/edit
+        - generic [ref=e595]:
+          - generic [ref=e596]:
+            - paragraph [ref=e597]: Address
+            - paragraph [ref=e598]: Main Street, Galgamuwa, 60470 GALGAMUWA
+          - generic [ref=e599]:
+            - paragraph [ref=e600]: Email
+            - paragraph [ref=e601]: alazhar@example.com
+          - generic [ref=e602]:
+            - paragraph [ref=e603]: Phone
+            - paragraph [ref=e604]: "+94370000001"
+        - generic [ref=e605]:
+          - link "📢 Announcements & Flash Messages Manage mosque announcements and flash messages Open →" [ref=e606] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/announcements
+            - generic [ref=e607]:
+              - generic [ref=e608]: 📢
+              - heading "Announcements & Flash Messages" [level=3] [ref=e609]
+            - paragraph [ref=e610]: Manage mosque announcements and flash messages
+            - generic [ref=e611]: Open →
+          - link "📅 Events Schedule and manage mosque events Open →" [ref=e612] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/events
+            - generic [ref=e613]:
+              - generic [ref=e614]: 📅
+              - heading "Events" [level=3] [ref=e615]
+            - paragraph [ref=e616]: Schedule and manage mosque events
+            - generic [ref=e617]: Open →
+          - link "🕐 Timetable Configure prayer timetable for all months Open →" [ref=e618] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/prayer-times
+            - generic [ref=e619]:
+              - generic [ref=e620]: 🕐
+              - heading "Timetable" [level=3] [ref=e621]
+            - paragraph [ref=e622]: Configure prayer timetable for all months
+            - generic [ref=e623]: Open →
+          - link "⚙️ Configure Prayer calculation, iqama, display settings Open →" [ref=e624] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/config
+            - generic [ref=e625]:
+              - generic [ref=e626]: ⚙️
+              - heading "Configure" [level=3] [ref=e627]
+            - paragraph [ref=e628]: Prayer calculation, iqama, display settings
+            - generic [ref=e629]: Open →
+          - link "✏️ Edit Details Update mosque name, address, contact info Open →" [ref=e630] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/edit
+            - generic [ref=e631]:
+              - generic [ref=e632]: ✏️
+              - heading "Edit Details" [level=3] [ref=e633]
+            - paragraph [ref=e634]: Update mosque name, address, contact info
+            - generic [ref=e635]: Open →
+          - link "🌐 Public Page View the public mosque display page Open →" [ref=e636] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/public
+            - generic [ref=e637]:
+              - generic [ref=e638]: 🌐
+              - heading "Public Page" [level=3] [ref=e639]
+            - paragraph [ref=e640]: View the public mosque display page
+            - generic [ref=e641]: Open →
+  - generic [ref=e29]:
+    - img [ref=e31]
+    - button "Open Tanstack query devtools" [ref=e79] [cursor=pointer]:
+      - img [ref=e80]
+  - button "Open Next.js Dev Tools" [ref=e133] [cursor=pointer]:
+    - img [ref=e134]
+  - alert [ref=e137]

@@ -11,9 +11,11 @@ router.get("/:slug", ctrl.getBySlug);
 
 // Authenticated (MOSQUE_ADMIN+)
 router.use(authenticate);
+router.get("/:id", requireMinRole("STAFF"), ctrl.getById);
 router.post("/", requireMinRole("MOSQUE_ADMIN"), ctrl.create);
 router.patch("/:id", requireMinRole("STAFF"), ctrl.update);
 router.delete("/:id", requireMinRole("SUPER_ADMIN"), ctrl.remove);
+router.get("/:id/config", requireMinRole("STAFF"), ctrl.getConfig);
 router.patch("/:id/config/:section", requireMinRole("STAFF"), ctrl.updateConfig);
 
 // User management

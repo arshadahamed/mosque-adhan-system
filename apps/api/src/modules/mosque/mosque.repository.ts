@@ -64,6 +64,9 @@ export const updateMosque = (id: string, data: Prisma.MosqueUpdateInput) =>
 export const deleteMosque = (id: string) =>
   prisma.mosque.delete({ where: { id } });
 
+export const getMosqueConfig = (mosqueId: string) =>
+  prisma.mosqueConfig.findUnique({ where: { mosqueId } });
+
 export const upsertMosqueConfig = (mosqueId: string, data: Prisma.MosqueConfigUpdateInput) =>
   prisma.mosqueConfig.upsert({
     where: { mosqueId },

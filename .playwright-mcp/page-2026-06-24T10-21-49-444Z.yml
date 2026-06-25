@@ -1,0 +1,367 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e138]:
+    - banner [ref=e139]:
+      - generic [ref=e141]:
+        - link "🕌 Mawaqit" [ref=e142] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e143]: 🕌
+          - generic [ref=e144]: Mawaqit
+        - link "🏠 Admin" [ref=e145] [cursor=pointer]:
+          - /url: /dashboard/mosques
+          - generic [ref=e146]: 🏠
+          - generic [ref=e147]: Admin
+        - button "🌐 Language ▾" [ref=e149]:
+          - text: 🌐 Language
+          - generic [ref=e150]: ▾
+        - link "♥ Support Mawaqit" [ref=e151] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e152]:
+          - link "👤 My profile" [ref=e153] [cursor=pointer]:
+            - /url: /dashboard/profile
+          - button "↩ Log out" [ref=e154]
+    - main [ref=e155]:
+      - generic [ref=e225]:
+        - generic [ref=e226]:
+          - link "← Back" [ref=e227] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt
+          - heading "Timetable — 2026" [level=2] [ref=e228]
+        - generic [ref=e229]:
+          - generic [ref=e230]:
+            - button "January ▲" [ref=e310]:
+              - generic [ref=e232]: January
+              - generic [ref=e233]: ▲
+            - generic [ref=e311]:
+              - generic [ref=e312]:
+                - button "Pre-populate from a csv file" [ref=e313]
+                - button "Empty current month" [ref=e314]
+              - table [ref=e318]:
+                - rowgroup [ref=e319]:
+                  - row "Day fajr shuruq dhuhr asr maghrib isha" [ref=e320]:
+                    - columnheader "Day" [ref=e321]
+                    - columnheader "fajr" [ref=e322]
+                    - columnheader "shuruq" [ref=e323]
+                    - columnheader "dhuhr" [ref=e324]
+                    - columnheader "asr" [ref=e325]
+                    - columnheader "maghrib" [ref=e326]
+                    - columnheader "isha" [ref=e327]
+                - rowgroup [ref=e328]:
+                  - row "1 06:15 07:45 12:30 15:20 17:45 19:15" [ref=e596] [cursor=pointer]:
+                    - cell "1" [ref=e330]
+                    - cell "06:15" [ref=e597]
+                    - cell "07:45" [ref=e332]
+                    - cell "12:30" [ref=e333]
+                    - cell "15:20" [ref=e334]
+                    - cell "17:45" [ref=e335]
+                    - cell "19:15" [ref=e336]
+                  - row "2 06:10 07:45 12:30 15:21 17:46 19:16" [ref=e337] [cursor=pointer]:
+                    - cell "2" [ref=e338]
+                    - cell "06:10" [ref=e339]
+                    - cell "07:45" [ref=e340]
+                    - cell "12:30" [ref=e341]
+                    - cell "15:21" [ref=e342]
+                    - cell "17:46" [ref=e343]
+                    - cell "19:16" [ref=e344]
+                  - row "3 06:09 07:44 12:30 15:22 17:47 19:17" [ref=e345] [cursor=pointer]:
+                    - cell "3" [ref=e346]
+                    - cell "06:09" [ref=e347]
+                    - cell "07:44" [ref=e348]
+                    - cell "12:30" [ref=e349]
+                    - cell "15:22" [ref=e350]
+                    - cell "17:47" [ref=e351]
+                    - cell "19:17" [ref=e352]
+                  - row "4 06:09 07:44 12:31 15:23 17:48 19:18" [ref=e353] [cursor=pointer]:
+                    - cell "4" [ref=e354]
+                    - cell "06:09" [ref=e355]
+                    - cell "07:44" [ref=e356]
+                    - cell "12:31" [ref=e357]
+                    - cell "15:23" [ref=e358]
+                    - cell "17:48" [ref=e359]
+                    - cell "19:18" [ref=e360]
+                  - row "5 06:08 07:43 12:31 15:24 17:49 19:19" [ref=e361] [cursor=pointer]:
+                    - cell "5" [ref=e362]
+                    - cell "06:08" [ref=e363]
+                    - cell "07:43" [ref=e364]
+                    - cell "12:31" [ref=e365]
+                    - cell "15:24" [ref=e366]
+                    - cell "17:49" [ref=e367]
+                    - cell "19:19" [ref=e368]
+                  - row "6 06:08 07:43 12:31 15:25 17:50 19:20" [ref=e369] [cursor=pointer]:
+                    - cell "6" [ref=e370]
+                    - cell "06:08" [ref=e371]
+                    - cell "07:43" [ref=e372]
+                    - cell "12:31" [ref=e373]
+                    - cell "15:25" [ref=e374]
+                    - cell "17:50" [ref=e375]
+                    - cell "19:20" [ref=e376]
+                  - row "7 06:07 07:42 12:32 15:26 17:51 19:21" [ref=e377] [cursor=pointer]:
+                    - cell "7" [ref=e378]
+                    - cell "06:07" [ref=e379]
+                    - cell "07:42" [ref=e380]
+                    - cell "12:32" [ref=e381]
+                    - cell "15:26" [ref=e382]
+                    - cell "17:51" [ref=e383]
+                    - cell "19:21" [ref=e384]
+                  - row "8 06:07 07:42 12:32 15:27 17:52 19:22" [ref=e385] [cursor=pointer]:
+                    - cell "8" [ref=e386]
+                    - cell "06:07" [ref=e387]
+                    - cell "07:42" [ref=e388]
+                    - cell "12:32" [ref=e389]
+                    - cell "15:27" [ref=e390]
+                    - cell "17:52" [ref=e391]
+                    - cell "19:22" [ref=e392]
+                  - row "9 06:06 07:41 12:32 15:28 17:53 19:23" [ref=e393] [cursor=pointer]:
+                    - cell "9" [ref=e394]
+                    - cell "06:06" [ref=e395]
+                    - cell "07:41" [ref=e396]
+                    - cell "12:32" [ref=e397]
+                    - cell "15:28" [ref=e398]
+                    - cell "17:53" [ref=e399]
+                    - cell "19:23" [ref=e400]
+                  - row "10 06:06 07:41 12:33 15:29 17:54 19:24" [ref=e401] [cursor=pointer]:
+                    - cell "10" [ref=e402]
+                    - cell "06:06" [ref=e403]
+                    - cell "07:41" [ref=e404]
+                    - cell "12:33" [ref=e405]
+                    - cell "15:29" [ref=e406]
+                    - cell "17:54" [ref=e407]
+                    - cell "19:24" [ref=e408]
+                  - row "11 06:05 07:40 12:33 15:30 17:55 19:25" [ref=e409] [cursor=pointer]:
+                    - cell "11" [ref=e410]
+                    - cell "06:05" [ref=e411]
+                    - cell "07:40" [ref=e412]
+                    - cell "12:33" [ref=e413]
+                    - cell "15:30" [ref=e414]
+                    - cell "17:55" [ref=e415]
+                    - cell "19:25" [ref=e416]
+                  - row "12 06:05 07:40 12:33 15:31 17:56 19:26" [ref=e417] [cursor=pointer]:
+                    - cell "12" [ref=e418]
+                    - cell "06:05" [ref=e419]
+                    - cell "07:40" [ref=e420]
+                    - cell "12:33" [ref=e421]
+                    - cell "15:31" [ref=e422]
+                    - cell "17:56" [ref=e423]
+                    - cell "19:26" [ref=e424]
+                  - row "13 06:04 07:39 12:34 15:32 17:57 19:27" [ref=e425] [cursor=pointer]:
+                    - cell "13" [ref=e426]
+                    - cell "06:04" [ref=e427]
+                    - cell "07:39" [ref=e428]
+                    - cell "12:34" [ref=e429]
+                    - cell "15:32" [ref=e430]
+                    - cell "17:57" [ref=e431]
+                    - cell "19:27" [ref=e432]
+                  - row "14 06:04 07:39 12:34 15:33 17:58 19:28" [ref=e433] [cursor=pointer]:
+                    - cell "14" [ref=e434]
+                    - cell "06:04" [ref=e435]
+                    - cell "07:39" [ref=e436]
+                    - cell "12:34" [ref=e437]
+                    - cell "15:33" [ref=e438]
+                    - cell "17:58" [ref=e439]
+                    - cell "19:28" [ref=e440]
+                  - row "15 06:03 07:38 12:34 15:34 17:59 19:29" [ref=e441] [cursor=pointer]:
+                    - cell "15" [ref=e442]
+                    - cell "06:03" [ref=e443]
+                    - cell "07:38" [ref=e444]
+                    - cell "12:34" [ref=e445]
+                    - cell "15:34" [ref=e446]
+                    - cell "17:59" [ref=e447]
+                    - cell "19:29" [ref=e448]
+                  - row "16 06:03 07:38 12:35 15:35 18:00 19:30" [ref=e449] [cursor=pointer]:
+                    - cell "16" [ref=e450]
+                    - cell "06:03" [ref=e451]
+                    - cell "07:38" [ref=e452]
+                    - cell "12:35" [ref=e453]
+                    - cell "15:35" [ref=e454]
+                    - cell "18:00" [ref=e455]
+                    - cell "19:30" [ref=e456]
+                  - row "17 06:02 07:37 12:35 15:36 18:01 19:31" [ref=e457] [cursor=pointer]:
+                    - cell "17" [ref=e458]
+                    - cell "06:02" [ref=e459]
+                    - cell "07:37" [ref=e460]
+                    - cell "12:35" [ref=e461]
+                    - cell "15:36" [ref=e462]
+                    - cell "18:01" [ref=e463]
+                    - cell "19:31" [ref=e464]
+                  - row "18 06:02 07:37 12:35 15:37 18:02 19:32" [ref=e465] [cursor=pointer]:
+                    - cell "18" [ref=e466]
+                    - cell "06:02" [ref=e467]
+                    - cell "07:37" [ref=e468]
+                    - cell "12:35" [ref=e469]
+                    - cell "15:37" [ref=e470]
+                    - cell "18:02" [ref=e471]
+                    - cell "19:32" [ref=e472]
+                  - row "19 06:01 07:36 12:36 15:38 18:03 19:33" [ref=e473] [cursor=pointer]:
+                    - cell "19" [ref=e474]
+                    - cell "06:01" [ref=e475]
+                    - cell "07:36" [ref=e476]
+                    - cell "12:36" [ref=e477]
+                    - cell "15:38" [ref=e478]
+                    - cell "18:03" [ref=e479]
+                    - cell "19:33" [ref=e480]
+                  - row "20 06:01 07:36 12:36 15:39 18:04 19:34" [ref=e481] [cursor=pointer]:
+                    - cell "20" [ref=e482]
+                    - cell "06:01" [ref=e483]
+                    - cell "07:36" [ref=e484]
+                    - cell "12:36" [ref=e485]
+                    - cell "15:39" [ref=e486]
+                    - cell "18:04" [ref=e487]
+                    - cell "19:34" [ref=e488]
+                  - row "21 06:00 07:35 12:36 15:40 18:05 19:35" [ref=e489] [cursor=pointer]:
+                    - cell "21" [ref=e490]
+                    - cell "06:00" [ref=e491]
+                    - cell "07:35" [ref=e492]
+                    - cell "12:36" [ref=e493]
+                    - cell "15:40" [ref=e494]
+                    - cell "18:05" [ref=e495]
+                    - cell "19:35" [ref=e496]
+                  - row "22 06:00 07:35 12:37 15:41 18:06 19:36" [ref=e497] [cursor=pointer]:
+                    - cell "22" [ref=e498]
+                    - cell "06:00" [ref=e499]
+                    - cell "07:35" [ref=e500]
+                    - cell "12:37" [ref=e501]
+                    - cell "15:41" [ref=e502]
+                    - cell "18:06" [ref=e503]
+                    - cell "19:36" [ref=e504]
+                  - row "23 05:59 07:34 12:37 15:42 18:07 19:37" [ref=e505] [cursor=pointer]:
+                    - cell "23" [ref=e506]
+                    - cell "05:59" [ref=e507]
+                    - cell "07:34" [ref=e508]
+                    - cell "12:37" [ref=e509]
+                    - cell "15:42" [ref=e510]
+                    - cell "18:07" [ref=e511]
+                    - cell "19:37" [ref=e512]
+                  - row "24 05:59 07:34 12:37 15:43 18:08 19:38" [ref=e513] [cursor=pointer]:
+                    - cell "24" [ref=e514]
+                    - cell "05:59" [ref=e515]
+                    - cell "07:34" [ref=e516]
+                    - cell "12:37" [ref=e517]
+                    - cell "15:43" [ref=e518]
+                    - cell "18:08" [ref=e519]
+                    - cell "19:38" [ref=e520]
+                  - row "25 05:58 07:33 12:38 15:44 18:09 19:39" [ref=e521] [cursor=pointer]:
+                    - cell "25" [ref=e522]
+                    - cell "05:58" [ref=e523]
+                    - cell "07:33" [ref=e524]
+                    - cell "12:38" [ref=e525]
+                    - cell "15:44" [ref=e526]
+                    - cell "18:09" [ref=e527]
+                    - cell "19:39" [ref=e528]
+                  - row "26 05:58 07:33 12:38 15:45 18:10 19:40" [ref=e529] [cursor=pointer]:
+                    - cell "26" [ref=e530]
+                    - cell "05:58" [ref=e531]
+                    - cell "07:33" [ref=e532]
+                    - cell "12:38" [ref=e533]
+                    - cell "15:45" [ref=e534]
+                    - cell "18:10" [ref=e535]
+                    - cell "19:40" [ref=e536]
+                  - row "27 05:57 07:32 12:38 15:46 18:11 19:41" [ref=e537] [cursor=pointer]:
+                    - cell "27" [ref=e538]
+                    - cell "05:57" [ref=e539]
+                    - cell "07:32" [ref=e540]
+                    - cell "12:38" [ref=e541]
+                    - cell "15:46" [ref=e542]
+                    - cell "18:11" [ref=e543]
+                    - cell "19:41" [ref=e544]
+                  - row "28 05:57 07:32 12:39 15:47 18:12 19:42" [ref=e545] [cursor=pointer]:
+                    - cell "28" [ref=e546]
+                    - cell "05:57" [ref=e547]
+                    - cell "07:32" [ref=e548]
+                    - cell "12:39" [ref=e549]
+                    - cell "15:47" [ref=e550]
+                    - cell "18:12" [ref=e551]
+                    - cell "19:42" [ref=e552]
+                  - row "29 05:56 07:31 12:39 15:48 18:13 19:43" [ref=e553] [cursor=pointer]:
+                    - cell "29" [ref=e554]
+                    - cell "05:56" [ref=e555]
+                    - cell "07:31" [ref=e556]
+                    - cell "12:39" [ref=e557]
+                    - cell "15:48" [ref=e558]
+                    - cell "18:13" [ref=e559]
+                    - cell "19:43" [ref=e560]
+                  - row "30 05:56 07:31 12:39 15:49 18:14 19:44" [ref=e561] [cursor=pointer]:
+                    - cell "30" [ref=e562]
+                    - cell "05:56" [ref=e563]
+                    - cell "07:31" [ref=e564]
+                    - cell "12:39" [ref=e565]
+                    - cell "15:49" [ref=e566]
+                    - cell "18:14" [ref=e567]
+                    - cell "19:44" [ref=e568]
+                  - row "31 05:55 07:30 12:40 15:50 18:15 19:45" [ref=e569] [cursor=pointer]:
+                    - cell "31" [ref=e570]
+                    - cell "05:55" [ref=e571]
+                    - cell "07:30" [ref=e572]
+                    - cell "12:40" [ref=e573]
+                    - cell "15:50" [ref=e574]
+                    - cell "18:15" [ref=e575]
+                    - cell "19:45" [ref=e576]
+          - button "February ▼" [ref=e235]:
+            - generic [ref=e236]: February
+            - generic [ref=e237]: ▼
+          - button "March ▼" [ref=e239]:
+            - generic [ref=e240]: March
+            - generic [ref=e241]: ▼
+          - button "April ▼" [ref=e243]:
+            - generic [ref=e244]: April
+            - generic [ref=e245]: ▼
+          - button "May ▼" [ref=e247]:
+            - generic [ref=e248]: May
+            - generic [ref=e249]: ▼
+          - generic [ref=e250]:
+            - button "June ▲" [ref=e251]:
+              - generic [ref=e252]: June
+              - generic [ref=e253]: ▲
+            - generic [ref=e254]:
+              - generic [ref=e255]:
+                - button "Pre-populate from a csv file" [ref=e256]
+                - button "Empty current month" [ref=e257]
+              - table [ref=e259]:
+                - rowgroup [ref=e260]:
+                  - row "Day fajr shuruq dhuhr asr maghrib isha" [ref=e261]:
+                    - columnheader "Day" [ref=e262]
+                    - columnheader "fajr" [ref=e263]
+                    - columnheader "shuruq" [ref=e264]
+                    - columnheader "dhuhr" [ref=e265]
+                    - columnheader "asr" [ref=e266]
+                    - columnheader "maghrib" [ref=e267]
+                    - columnheader "isha" [ref=e268]
+                - rowgroup [ref=e269]:
+                  - row "2 04:31 05:56 12:01 15:31 18:31 20:01" [ref=e270] [cursor=pointer]:
+                    - cell "2" [ref=e271]
+                    - cell "04:31" [ref=e272]
+                    - cell "05:56" [ref=e273]
+                    - cell "12:01" [ref=e274]
+                    - cell "15:31" [ref=e275]
+                    - cell "18:31" [ref=e276]
+                    - cell "20:01" [ref=e277]
+                  - row "3 04:32 05:57 12:02 15:32 18:32 20:02" [ref=e278] [cursor=pointer]:
+                    - cell "3" [ref=e279]
+                    - cell "04:32" [ref=e280]
+                    - cell "05:57" [ref=e281]
+                    - cell "12:02" [ref=e282]
+                    - cell "15:32" [ref=e283]
+                    - cell "18:32" [ref=e284]
+                    - cell "20:02" [ref=e285]
+          - button "July ▼" [ref=e287]:
+            - generic [ref=e288]: July
+            - generic [ref=e289]: ▼
+          - button "August ▼" [ref=e291]:
+            - generic [ref=e292]: August
+            - generic [ref=e293]: ▼
+          - button "September ▼" [ref=e295]:
+            - generic [ref=e296]: September
+            - generic [ref=e297]: ▼
+          - button "October ▼" [ref=e299]:
+            - generic [ref=e300]: October
+            - generic [ref=e301]: ▼
+          - button "November ▼" [ref=e303]:
+            - generic [ref=e304]: November
+            - generic [ref=e305]: ▼
+          - button "December ▼" [ref=e307]:
+            - generic [ref=e308]: December
+            - generic [ref=e309]: ▼
+  - generic [ref=e39]:
+    - img [ref=e41]
+    - button "Open Tanstack query devtools" [ref=e89] [cursor=pointer]:
+      - img [ref=e90]
+  - button "Open Next.js Dev Tools" [ref=e34] [cursor=pointer]:
+    - img [ref=e35]
+  - alert [ref=e38]

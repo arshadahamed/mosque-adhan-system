@@ -1,0 +1,60 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "mawaqit logo" [ref=e5] [cursor=pointer]:
+        - /url: /en/
+        - img "mawaqit logo" [ref=e6]
+      - generic [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link " Admin" [ref=e10] [cursor=pointer]:
+              - /url: /en/backoffice/mosque
+              - generic [ref=e11]: 
+              - text: Admin
+          - listitem [ref=e12]:
+            - button " Language" [ref=e13] [cursor=pointer]:
+              - generic [ref=e14]: 
+              - text: Language
+          - listitem [ref=e16]:
+            - link " Support Mawaqit" [ref=e17] [cursor=pointer]:
+              - /url: https://donate.mawaqit.net
+              - generic [ref=e18]: 
+              - text: Support Mawaqit
+        - list [ref=e19]:
+          - listitem [ref=e20]:
+            - link " My profile" [ref=e21] [cursor=pointer]:
+              - /url: /en/backoffice/profile/
+              - generic [ref=e22]: 
+              - text: My profile
+          - listitem [ref=e23]:
+            - link " Log out" [ref=e24] [cursor=pointer]:
+              - /url: /en/backoffice/logout
+              - generic [ref=e25]: 
+              - text: Log out
+  - generic [ref=e26]:
+    - generic [ref=e28]:
+      - heading "Prayer times configuration" [level=3] [ref=e29]:
+        - strong [ref=e30]: Prayer times configuration
+      - paragraph [ref=e31]: "* Required"
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e35] [cursor=pointer]: Regional settings
+        - generic [ref=e37] [cursor=pointer]: Calculation of prayer times
+        - generic [ref=e39] [cursor=pointer]: Al-Athan
+        - generic [ref=e41] [cursor=pointer]: Iqama
+        - generic [ref=e43] [cursor=pointer]: Jumua
+        - generic [ref=e45] [cursor=pointer]: Estimated duration of each prayer (in minutes) *
+        - generic [ref=e47] [cursor=pointer]: Invocations and hadiths
+        - generic [ref=e49] [cursor=pointer]: Display
+        - generic [ref=e51] [cursor=pointer]: Eid and Ramadan
+      - button "Save" [ref=e52] [cursor=pointer]
+      - link "Cancel" [ref=e53] [cursor=pointer]:
+        - /url: /en/backoffice/mosque
+    - text: 
+  - iframe [ref=e54]:
+    
+  - button "Open Intercom Messenger" [ref=e55] [cursor=pointer]:
+    - img [ref=e57]
+    - generic:
+      - img
+  - status [ref=e59]

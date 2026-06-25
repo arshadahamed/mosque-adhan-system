@@ -1,0 +1,104 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e138]:
+    - banner [ref=e139]:
+      - generic [ref=e141]:
+        - link "🕌 Mawaqit" [ref=e142] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e143]: 🕌
+          - generic [ref=e144]: Mawaqit
+        - link "🏠 Admin" [ref=e145] [cursor=pointer]:
+          - /url: /dashboard/mosques
+          - generic [ref=e146]: 🏠
+          - generic [ref=e147]: Admin
+        - button "🌐 Language ▾" [ref=e149]:
+          - text: 🌐 Language
+          - generic [ref=e150]: ▾
+        - link "♥ Support Mawaqit" [ref=e151] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e152]:
+          - link "👤 My profile" [ref=e153] [cursor=pointer]:
+            - /url: /dashboard/profile
+          - button "↩ Log out" [ref=e154]
+    - main [ref=e155]:
+      - generic [ref=e288]:
+        - generic [ref=e289]:
+          - link "◀ Back" [ref=e290] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt
+          - heading "AL AZHAR JUMMA MASJID — Announcements" [level=2] [ref=e291]
+        - generic [ref=e292]:
+          - button "Announcements" [ref=e293]
+          - button "Flash messages" [ref=e294]
+        - generic [ref=e295]:
+          - generic [ref=e296]:
+            - paragraph [ref=e297]:
+              - text: You can have up to
+              - strong [ref=e298]: 15 enabled
+              - text: announcements at a time.
+            - button "+ Add" [ref=e299]
+          - table [ref=e301]:
+            - rowgroup [ref=e302]:
+              - row "Title Content Type Enabled Starts" [ref=e303]:
+                - columnheader "Title" [ref=e304]
+                - columnheader "Content" [ref=e305]
+                - columnheader "Type" [ref=e306]
+                - columnheader "Enabled" [ref=e307]
+                - columnheader "Starts" [ref=e308]
+                - columnheader [ref=e309]
+            - rowgroup [ref=e310]:
+              - row "Welcome to Al Azhar Jumma Masjid Jumu'ah Khutba begins at 12:30 PM every Friday. All brothers are welcome. TEXT Yes — ✏️ 🗑️" [ref=e311]:
+                - cell "Welcome to Al Azhar Jumma Masjid" [ref=e312]
+                - cell "Jumu'ah Khutba begins at 12:30 PM every Friday. All brothers are welcome." [ref=e313]
+                - cell "TEXT" [ref=e314]
+                - cell "Yes" [ref=e315]
+                - cell "—" [ref=e316]
+                - cell "✏️ 🗑️" [ref=e317]:
+                  - generic [ref=e318]:
+                    - button "✏️" [ref=e319]
+                    - button "🗑️" [ref=e320]
+              - row "Jumu'ah Khutba Time Jumu'ah Khutba begins every Friday at 12:30 PM. All brothers are welcome to attend. TEXT Yes — ✏️ 🗑️" [ref=e321]:
+                - cell "Jumu'ah Khutba Time" [ref=e322]
+                - cell "Jumu'ah Khutba begins every Friday at 12:30 PM. All brothers are welcome to attend." [ref=e323]
+                - cell "TEXT" [ref=e324]
+                - cell "Yes" [ref=e325]
+                - cell "—" [ref=e326]
+                - cell "✏️ 🗑️" [ref=e327]:
+                  - generic [ref=e328]:
+                    - button "✏️" [ref=e329]
+                    - button "🗑️" [ref=e330]
+              - row "Ramadan Iftar Schedule Join us for daily Iftar. Dates, water, and meals provided. Please bring a contribution if possible. TEXT Yes — ✏️ 🗑️" [ref=e331]:
+                - cell "Ramadan Iftar Schedule" [ref=e332]
+                - cell "Join us for daily Iftar. Dates, water, and meals provided. Please bring a contribution if possible." [ref=e333]
+                - cell "TEXT" [ref=e334]
+                - cell "Yes" [ref=e335]
+                - cell "—" [ref=e336]
+                - cell "✏️ 🗑️" [ref=e337]:
+                  - generic [ref=e338]:
+                    - button "✏️" [ref=e339]
+                    - button "🗑️" [ref=e340]
+              - row "Quranic Classes for Children Quranic education every Saturday 9 AM–12 PM. Ages 5–15. Registration open. TEXT Yes — ✏️ 🗑️" [ref=e341]:
+                - cell "Quranic Classes for Children" [ref=e342]
+                - cell "Quranic education every Saturday 9 AM–12 PM. Ages 5–15. Registration open." [ref=e343]
+                - cell "TEXT" [ref=e344]
+                - cell "Yes" [ref=e345]
+                - cell "—" [ref=e346]
+                - cell "✏️ 🗑️" [ref=e347]:
+                  - generic [ref=e348]:
+                    - button "✏️" [ref=e349]
+                    - button "🗑️" [ref=e350]
+              - row "Mosque Renovation Fund We are raising funds to renovate the main prayer hall. Donate generously. TEXT No — ✏️ 🗑️" [ref=e351]:
+                - cell "Mosque Renovation Fund" [ref=e352]
+                - cell "We are raising funds to renovate the main prayer hall. Donate generously." [ref=e353]
+                - cell "TEXT" [ref=e354]
+                - cell "No" [ref=e355]
+                - cell "—" [ref=e356]
+                - cell "✏️ 🗑️" [ref=e357]:
+                  - generic [ref=e358]:
+                    - button "✏️" [ref=e359]
+                    - button "🗑️" [ref=e360]
+  - generic [ref=e29]:
+    - img [ref=e31]
+    - button "Open Tanstack query devtools" [ref=e79] [cursor=pointer]:
+      - img [ref=e80]
+  - button "Open Next.js Dev Tools" [ref=e133] [cursor=pointer]:
+    - img [ref=e134]
+  - alert [ref=e137]

@@ -42,10 +42,22 @@ export async function list(req: Request, res: Response, next: NextFunction) {
   } catch (e) { next(e); }
 }
 
-// GET /mosques/:slug
+// GET /mosques/:slug  (public — also handles CUID-based dashboard requests)
 export async function getBySlug(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await svc.getMosqueBySlug(req.params.slug);
+    const param = req.params.slug;
+    // CUIDs have no hyphens; slugs always do
+    const data = param.includes("-")
+      ? await svc.getMosqueBySlug(param)
+      : await svc.getMosqueById(param);
+    res.json({ success: true, data });
+  } catch (e) { next(e); }
+}
+
+// GET /mosques/:id  (authenticated — strict IDOR check)
+export async function getById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await svc.getMosqueById(req.params.id, req.user!.sub, req.user!.role);
     res.json({ success: true, data });
   } catch (e) { next(e); }
 }
@@ -73,6 +85,14 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     await svc.deleteMosque(req.params.id, req.user!.sub, req.user!.role);
     res.json({ success: true, data: { deleted: true } });
+  } catch (e) { next(e); }
+}
+
+// GET /mosques/:id/config
+export async function getConfig(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await svc.getMosqueConfig(req.params.id, req.user!.sub, req.user!.role);
+    res.json({ success: true, data });
   } catch (e) { next(e); }
 }
 

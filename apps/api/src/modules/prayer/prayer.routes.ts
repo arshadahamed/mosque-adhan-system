@@ -12,6 +12,8 @@ router.get("/:year/:month", ctrl.getMonth);
 
 // Authenticated (STAFF+)
 router.post("/", authenticate, requireMinRole("STAFF"), ctrl.uploadSchedule);
+router.patch("/:year/:month", authenticate, requireMinRole("STAFF"), ctrl.bulkUpdateMonth);
 router.patch("/:year/:month/:day", authenticate, requireMinRole("STAFF"), ctrl.updateDay);
+router.delete("/:year/:month", authenticate, requireMinRole("STAFF"), ctrl.clearMonth);
 
 export default router;

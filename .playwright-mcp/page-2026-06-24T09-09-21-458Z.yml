@@ -1,0 +1,45 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "🕌 Mawaqit" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: 🕌
+          - generic [ref=e8]: Mawaqit
+        - link "🏠 Admin" [ref=e78] [cursor=pointer]:
+          - /url: /dashboard/mosques
+          - generic [ref=e79]: 🏠
+          - generic [ref=e80]: Admin
+        - button "🌐 Language ▾" [ref=e10]:
+          - text: 🌐 Language
+          - generic [ref=e11]: ▾
+        - link "♥ Support Mawaqit" [ref=e12] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e13]:
+          - link "👤 My profile" [ref=e81] [cursor=pointer]:
+            - /url: /dashboard/profile
+          - button "↩ Log out" [ref=e82]
+    - main [ref=e16]:
+      - generic [ref=e194]:
+        - generic [ref=e195]:
+          - link "◀ Back" [ref=e196] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt
+          - heading "AL AZHAR JUMMA MASJID — Announcements" [level=2] [ref=e197]
+        - generic [ref=e198]:
+          - button "Announcements" [ref=e199]
+          - button "Flash messages" [ref=e200]
+        - generic [ref=e201]:
+          - generic [ref=e202]:
+            - paragraph [ref=e203]:
+              - text: You can have up to
+              - strong [ref=e204]: 15 enabled
+              - text: announcements at a time.
+            - button "+ Add" [ref=e205]
+          - paragraph [ref=e206]: No announcements yet. Click "+ Add" to create one.
+  - generic [ref=e94]:
+    - img [ref=e96]
+    - button "Open Tanstack query devtools" [ref=e144] [cursor=pointer]:
+      - img [ref=e145]
+  - button "Open Next.js Dev Tools" [ref=e74] [cursor=pointer]:
+    - img [ref=e75]
+  - alert [ref=e193]

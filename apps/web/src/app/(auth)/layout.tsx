@@ -1,12 +1,15 @@
-import Link from "next/link";
+import { Suspense } from "react";
+import { Navbar } from "@/components/layout/navbar";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4">
-      <Link href="/" className="mb-8 flex items-center gap-2 font-bold text-2xl text-primary">
-        <span>🕌</span> Mawaqit
-      </Link>
-      <div className="w-full max-w-sm">{children}</div>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <Suspense>{children}</Suspense>
+        </div>
+      </div>
     </div>
   );
 }

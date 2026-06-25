@@ -72,6 +72,32 @@ export async function updateDay(req: Request, res: Response, next: NextFunction)
   } catch (e) { next(e); }
 }
 
+// PATCH /mosques/:mosqueId/prayer-times/:year/:month  (bulk CSV import — replaces month only)
+export async function bulkUpdateMonth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const year = parseInt(req.params.year, 10);
+    const month = parseInt(req.params.month, 10);
+    const daySchema = z.object({
+      day: z.number().int().min(1).max(31),
+      fajr: timeSchema, shuruq: timeSchema, dhuhr: timeSchema,
+      asr: timeSchema, maghrib: timeSchema, isha: timeSchema,
+    });
+    const { days } = z.object({ days: z.array(daySchema).min(1).max(31) }).parse(req.body);
+    const data = await svc.bulkUpdateMonth(req.params.mosqueId, year, month, days, req.user!.sub, req.user!.role);
+    res.json({ success: true, data });
+  } catch (e) { next(e); }
+}
+
+// DELETE /mosques/:mosqueId/prayer-times/:year/:month  (empty a month)
+export async function clearMonth(req: Request, res: Response, next: NextFunction) {
+  try {
+    const year = parseInt(req.params.year, 10);
+    const month = parseInt(req.params.month, 10);
+    const data = await svc.clearMonth(req.params.mosqueId, year, month, req.user!.sub, req.user!.role);
+    res.json({ success: true, data });
+  } catch (e) { next(e); }
+}
+
 // GET /mosques/:mosqueId/widget
 export async function getWidget(req: Request, res: Response, next: NextFunction) {
   try {

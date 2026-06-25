@@ -1,0 +1,103 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e138]:
+    - banner [ref=e139]:
+      - generic [ref=e141]:
+        - link "🕌 Mawaqit" [ref=e142] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e143]: 🕌
+          - generic [ref=e144]: Mawaqit
+        - link "🏠 Admin" [ref=e145] [cursor=pointer]:
+          - /url: /dashboard/mosques
+          - generic [ref=e146]: 🏠
+          - generic [ref=e147]: Admin
+        - button "🌐 Language ▾" [ref=e149]:
+          - text: 🌐 Language
+          - generic [ref=e150]: ▾
+        - link "♥ Support Mawaqit" [ref=e151] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e152]:
+          - link "👤 My profile" [ref=e153] [cursor=pointer]:
+            - /url: /dashboard/profile
+          - button "↩ Log out" [ref=e154]
+    - main [ref=e155]:
+      - generic [ref=e225]:
+        - generic [ref=e226]:
+          - link "← Back" [ref=e227] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt
+          - heading "Timetable — 2026" [level=2] [ref=e228]
+        - generic [ref=e229]:
+          - button "January ▼" [ref=e231]:
+            - generic [ref=e232]: January
+            - generic [ref=e233]: ▼
+          - button "February ▼" [ref=e235]:
+            - generic [ref=e236]: February
+            - generic [ref=e237]: ▼
+          - button "March ▼" [ref=e239]:
+            - generic [ref=e240]: March
+            - generic [ref=e241]: ▼
+          - button "April ▼" [ref=e243]:
+            - generic [ref=e244]: April
+            - generic [ref=e245]: ▼
+          - button "May ▼" [ref=e247]:
+            - generic [ref=e248]: May
+            - generic [ref=e249]: ▼
+          - generic [ref=e250]:
+            - button "June ▲" [ref=e251]:
+              - generic [ref=e252]: June
+              - generic [ref=e253]: ▲
+            - generic [ref=e254]:
+              - generic [ref=e255]:
+                - button "Pre-populate from a csv file" [ref=e256]
+                - button "Empty current month" [ref=e257]
+              - table [ref=e259]:
+                - rowgroup [ref=e260]:
+                  - row "Day fajr shuruq dhuhr asr maghrib isha" [ref=e261]:
+                    - columnheader "Day" [ref=e262]
+                    - columnheader "fajr" [ref=e263]
+                    - columnheader "shuruq" [ref=e264]
+                    - columnheader "dhuhr" [ref=e265]
+                    - columnheader "asr" [ref=e266]
+                    - columnheader "maghrib" [ref=e267]
+                    - columnheader "isha" [ref=e268]
+                - rowgroup [ref=e269]:
+                  - row "2 04:31 05:56 12:01 15:31 18:31 20:01" [ref=e270] [cursor=pointer]:
+                    - cell "2" [ref=e271]
+                    - cell "04:31" [ref=e272]
+                    - cell "05:56" [ref=e273]
+                    - cell "12:01" [ref=e274]
+                    - cell "15:31" [ref=e275]
+                    - cell "18:31" [ref=e276]
+                    - cell "20:01" [ref=e277]
+                  - row "3 04:32 05:57 12:02 15:32 18:32 20:02" [ref=e278] [cursor=pointer]:
+                    - cell "3" [ref=e279]
+                    - cell "04:32" [ref=e280]
+                    - cell "05:57" [ref=e281]
+                    - cell "12:02" [ref=e282]
+                    - cell "15:32" [ref=e283]
+                    - cell "18:32" [ref=e284]
+                    - cell "20:02" [ref=e285]
+          - button "July ▼" [ref=e287]:
+            - generic [ref=e288]: July
+            - generic [ref=e289]: ▼
+          - button "August ▼" [ref=e291]:
+            - generic [ref=e292]: August
+            - generic [ref=e293]: ▼
+          - button "September ▼" [ref=e295]:
+            - generic [ref=e296]: September
+            - generic [ref=e297]: ▼
+          - button "October ▼" [ref=e299]:
+            - generic [ref=e300]: October
+            - generic [ref=e301]: ▼
+          - button "November ▼" [ref=e303]:
+            - generic [ref=e304]: November
+            - generic [ref=e305]: ▼
+          - button "December ▼" [ref=e307]:
+            - generic [ref=e308]: December
+            - generic [ref=e309]: ▼
+  - generic [ref=e39]:
+    - img [ref=e41]
+    - button "Open Tanstack query devtools" [ref=e89] [cursor=pointer]:
+      - img [ref=e90]
+  - button "Open Next.js Dev Tools" [ref=e34] [cursor=pointer]:
+    - img [ref=e35]
+  - alert [ref=e38]

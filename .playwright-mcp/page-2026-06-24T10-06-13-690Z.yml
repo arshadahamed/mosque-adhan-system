@@ -1,0 +1,144 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "🕌 Mawaqit" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: 🕌
+          - generic [ref=e8]: Mawaqit
+        - button "🌐 Language ▾" [ref=e10]:
+          - text: 🌐 Language
+          - generic [ref=e11]: ▾
+        - link "♥ Support Mawaqit" [ref=e12] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e13]:
+          - link "👤 Register" [ref=e14] [cursor=pointer]:
+            - /url: /register
+          - link "↩ Log in" [ref=e15] [cursor=pointer]:
+            - /url: /login
+    - main [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - link "◀ Back" [ref=e19] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt
+          - heading "Prayer times configuration" [level=2] [ref=e20]
+        - paragraph [ref=e21]: "* Required"
+        - generic [ref=e22]:
+          - button "Regional settings ▲" [ref=e23]:
+            - generic [ref=e24]: Regional settings
+            - generic [ref=e25]: ▲
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - text: Time zone *
+              - combobox [ref=e29]:
+                - option "Africa/Abidjan"
+                - option "Africa/Cairo"
+                - option "Africa/Casablanca"
+                - option "Africa/Nairobi"
+                - option "Africa/Tunis"
+                - option "America/New_York"
+                - option "America/Chicago"
+                - option "America/Los_Angeles"
+                - option "America/Toronto"
+                - option "America/Sao_Paulo"
+                - option "Asia/Colombo"
+                - option "Asia/Dhaka"
+                - option "Asia/Dubai"
+                - option "Asia/Jakarta"
+                - option "Asia/Karachi"
+                - option "Asia/Kolkata"
+                - option "Asia/Kuala_Lumpur"
+                - option "Asia/Riyadh"
+                - option "Asia/Singapore"
+                - option "Asia/Tehran"
+                - option "Asia/Tokyo"
+                - option "Europe/Amsterdam"
+                - option "Europe/Berlin"
+                - option "Europe/Istanbul"
+                - option "Europe/London"
+                - option "Europe/Madrid"
+                - option "Europe/Paris"
+                - option "Europe/Rome"
+                - option "Pacific/Auckland"
+                - option "UTC" [selected]
+            - generic [ref=e30]:
+              - text: Daylight saving time (DST) *
+              - combobox [ref=e31]:
+                - option "Auto (Depends on timezone)" [selected]
+                - option "Yes"
+                - option "No"
+            - generic [ref=e32]:
+              - text: Adjustment of the Hegira date *
+              - combobox [ref=e33]:
+                - option "-2"
+                - option "-1"
+                - option "0" [selected]
+                - option "1"
+                - option "2"
+            - generic [ref=e34]:
+              - generic [ref=e35]:
+                - paragraph [ref=e36]: Time format *
+                - generic [ref=e37]:
+                  - generic [ref=e38] [cursor=pointer]:
+                    - radio "24h" [ref=e39]
+                    - text: 24h
+                  - generic [ref=e40] [cursor=pointer]:
+                    - radio "12h" [checked] [ref=e41]
+                    - text: 12h
+              - generic [ref=e42]:
+                - paragraph [ref=e43]: Temperature unit *
+                - generic [ref=e44]:
+                  - generic [ref=e45] [cursor=pointer]:
+                    - radio "°C" [checked] [ref=e46]
+                    - text: °C
+                  - generic [ref=e47] [cursor=pointer]:
+                    - radio "°F" [ref=e48]
+                    - text: °F
+        - button "Calculation of prayer times ▼" [ref=e50]:
+          - generic [ref=e51]: Calculation of prayer times
+          - generic [ref=e52]: ▼
+        - button "Al-Athan ▼" [ref=e54]:
+          - generic [ref=e55]: Al-Athan
+          - generic [ref=e56]: ▼
+        - button "Iqama ▼" [ref=e58]:
+          - generic [ref=e59]: Iqama
+          - generic [ref=e60]: ▼
+        - button "Jumua ▼" [ref=e62]:
+          - generic [ref=e63]: Jumua
+          - generic [ref=e64]: ▼
+        - generic [ref=e65]:
+          - button "Estimated duration of each prayer (in minutes) * ▲" [ref=e66]:
+            - generic [ref=e67]: Estimated duration of each prayer (in minutes) *
+            - generic [ref=e68]: ▲
+          - generic [ref=e70]:
+            - paragraph [ref=e71]: How long each prayer takes. Used to calculate the black screen duration.
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - generic [ref=e74]: fajr *
+                - spinbutton [ref=e75]: "10"
+              - generic [ref=e76]:
+                - generic [ref=e77]: dhuhr *
+                - spinbutton [ref=e78]: "0"
+              - generic [ref=e79]:
+                - generic [ref=e80]: asr *
+                - spinbutton [ref=e81]: "1"
+              - generic [ref=e82]:
+                - generic [ref=e83]: maghrib *
+                - spinbutton [ref=e84]: "1"
+              - generic [ref=e85]:
+                - generic [ref=e86]: isha *
+                - spinbutton [ref=e87]: "10"
+        - button "Invocations and hadiths ▼" [ref=e89]:
+          - generic [ref=e90]: Invocations and hadiths
+          - generic [ref=e91]: ▼
+        - button "Display ▼" [ref=e93]:
+          - generic [ref=e94]: Display
+          - generic [ref=e95]: ▼
+        - button "Eid and Ramadan ▼" [ref=e97]:
+          - generic [ref=e98]: Eid and Ramadan
+          - generic [ref=e99]: ▼
+        - generic [ref=e100]:
+          - button "Save" [ref=e101]
+          - button "Cancel" [ref=e102]
+  - button "Open Next.js Dev Tools" [ref=e108] [cursor=pointer]:
+    - img [ref=e109]

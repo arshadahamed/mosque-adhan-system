@@ -1,0 +1,37 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e141]:
+    - banner [ref=e142]:
+      - generic [ref=e144]:
+        - link "🕌 Mawaqit" [ref=e145] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e146]: 🕌
+          - generic [ref=e147]: Mawaqit
+        - link "🏠 Admin" [ref=e148] [cursor=pointer]:
+          - /url: /dashboard/mosques
+          - generic [ref=e149]: 🏠
+          - generic [ref=e150]: Admin
+        - button "🌐 Language ▾" [ref=e152]:
+          - text: 🌐 Language
+          - generic [ref=e153]: ▾
+        - link "♥ Support Mawaqit" [ref=e154] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e155]:
+          - link "👤 My profile" [ref=e156] [cursor=pointer]:
+            - /url: /dashboard/profile
+          - button "↩ Log out" [ref=e157]
+    - main [ref=e158]:
+      - generic [ref=e159]:
+        - generic [ref=e160]:
+          - heading "Admin (…)" [level=2] [ref=e161]
+          - generic [ref=e162]:
+            - link "+ Add" [ref=e163] [cursor=pointer]:
+              - /url: /dashboard/mosques/new
+            - button "↩ Retrieve the access to a mosque" [ref=e164]
+        - paragraph [ref=e165]: Loading…
+  - generic [ref=e33]:
+    - img [ref=e35]
+    - button "Open Tanstack query devtools" [ref=e83] [cursor=pointer]:
+      - img [ref=e84]
+  - button "Open Next.js Dev Tools" [ref=e137] [cursor=pointer]:
+    - img [ref=e138]
+  - alert [ref=e32]

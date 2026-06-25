@@ -1,0 +1,28 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e5]:
+      - link "🕌 Mawaqit" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: 🕌
+        - generic [ref=e8]: Mawaqit
+      - button "🌐 Language ▾" [ref=e10]:
+        - text: 🌐 Language
+        - generic [ref=e11]: ▾
+      - link "♥ Support Mawaqit" [ref=e12] [cursor=pointer]:
+        - /url: "#"
+      - generic [ref=e13]:
+        - link "👤 Register" [ref=e14] [cursor=pointer]:
+          - /url: /register
+        - link "↩ Log in" [ref=e15] [cursor=pointer]:
+          - /url: /login
+  - generic [ref=e18]:
+    - heading "Log in" [level=1] [ref=e19]
+    - generic [ref=e20]:
+      - textbox "Email" [ref=e22]
+      - generic [ref=e23]:
+        - textbox "Password" [ref=e24]
+        - button "👁" [ref=e25]
+      - button "Log In" [ref=e26]
+      - paragraph [ref=e27]:
+        - link "Forgot your password ?" [ref=e28] [cursor=pointer]:
+          - /url: /forgot-password

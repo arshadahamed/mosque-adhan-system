@@ -1,0 +1,153 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e138]:
+    - banner [ref=e139]:
+      - generic [ref=e141]:
+        - link "🕌 Mawaqit" [ref=e142] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e143]: 🕌
+          - generic [ref=e144]: Mawaqit
+        - link "🏠 Admin" [ref=e145] [cursor=pointer]:
+          - /url: /dashboard/mosques
+          - generic [ref=e146]: 🏠
+          - generic [ref=e147]: Admin
+        - button "🌐 Language ▾" [ref=e149]:
+          - text: 🌐 Language
+          - generic [ref=e150]: ▾
+        - link "♥ Support Mawaqit" [ref=e151] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e152]:
+          - link "👤 My profile" [ref=e153] [cursor=pointer]:
+            - /url: /dashboard/profile
+          - button "↩ Log out" [ref=e154]
+    - main [ref=e155]:
+      - generic [ref=e225]:
+        - generic [ref=e226]:
+          - link "◀ Back" [ref=e227] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt
+          - heading "Prayer times configuration" [level=2] [ref=e228]
+        - paragraph [ref=e229]: "* Required"
+        - generic [ref=e230]:
+          - button "Regional settings ▲" [ref=e231]:
+            - generic [ref=e232]: Regional settings
+            - generic [ref=e233]: ▲
+          - generic [ref=e235]:
+            - generic [ref=e236]:
+              - text: Time zone *
+              - combobox [ref=e237]:
+                - option "Africa/Abidjan"
+                - option "Africa/Cairo"
+                - option "Africa/Casablanca"
+                - option "Africa/Nairobi"
+                - option "Africa/Tunis"
+                - option "America/New_York"
+                - option "America/Chicago"
+                - option "America/Los_Angeles"
+                - option "America/Toronto"
+                - option "America/Sao_Paulo"
+                - option "Asia/Colombo"
+                - option "Asia/Dhaka"
+                - option "Asia/Dubai"
+                - option "Asia/Jakarta"
+                - option "Asia/Karachi"
+                - option "Asia/Kolkata"
+                - option "Asia/Kuala_Lumpur"
+                - option "Asia/Riyadh"
+                - option "Asia/Singapore"
+                - option "Asia/Tehran"
+                - option "Asia/Tokyo"
+                - option "Europe/Amsterdam"
+                - option "Europe/Berlin"
+                - option "Europe/Istanbul"
+                - option "Europe/London"
+                - option "Europe/Madrid"
+                - option "Europe/Paris"
+                - option "Europe/Rome"
+                - option "Pacific/Auckland"
+                - option "UTC" [selected]
+            - generic [ref=e238]:
+              - text: Daylight saving time (DST) *
+              - combobox [ref=e239]:
+                - option "Auto (Depends on timezone)" [selected]
+                - option "Yes"
+                - option "No"
+            - generic [ref=e240]:
+              - text: Adjustment of the Hegira date *
+              - combobox [ref=e241]:
+                - option "-2"
+                - option "-1"
+                - option "0" [selected]
+                - option "1"
+                - option "2"
+            - generic [ref=e242]:
+              - generic [ref=e243]:
+                - paragraph [ref=e244]: Time format *
+                - generic [ref=e245]:
+                  - generic [ref=e246] [cursor=pointer]:
+                    - radio "24h" [ref=e247]
+                    - text: 24h
+                  - generic [ref=e248] [cursor=pointer]:
+                    - radio "12h" [checked] [ref=e249]
+                    - text: 12h
+              - generic [ref=e250]:
+                - paragraph [ref=e251]: Temperature unit *
+                - generic [ref=e252]:
+                  - generic [ref=e253] [cursor=pointer]:
+                    - radio "°C" [checked] [ref=e254]
+                    - text: °C
+                  - generic [ref=e255] [cursor=pointer]:
+                    - radio "°F" [ref=e256]
+                    - text: °F
+        - button "Calculation of prayer times ▼" [ref=e258]:
+          - generic [ref=e259]: Calculation of prayer times
+          - generic [ref=e260]: ▼
+        - button "Al-Athan ▼" [ref=e262]:
+          - generic [ref=e263]: Al-Athan
+          - generic [ref=e264]: ▼
+        - button "Iqama ▼" [ref=e266]:
+          - generic [ref=e267]: Iqama
+          - generic [ref=e268]: ▼
+        - button "Jumua ▼" [ref=e270]:
+          - generic [ref=e271]: Jumua
+          - generic [ref=e272]: ▼
+        - generic [ref=e273]:
+          - button "Estimated duration of each prayer (in minutes) * ▲" [ref=e274]:
+            - generic [ref=e275]: Estimated duration of each prayer (in minutes) *
+            - generic [ref=e276]: ▲
+          - generic [ref=e278]:
+            - paragraph [ref=e279]: How long each prayer takes. Used to calculate the black screen duration.
+            - generic [ref=e280]:
+              - generic [ref=e281]:
+                - generic [ref=e282]: fajr *
+                - spinbutton [ref=e283]: "10"
+              - generic [ref=e284]:
+                - generic [ref=e285]: dhuhr *
+                - spinbutton [ref=e286]: "0"
+              - generic [ref=e287]:
+                - generic [ref=e288]: asr *
+                - spinbutton [ref=e289]: "1"
+              - generic [ref=e290]:
+                - generic [ref=e291]: maghrib *
+                - spinbutton [ref=e292]: "1"
+              - generic [ref=e293]:
+                - generic [ref=e294]: isha *
+                - spinbutton [ref=e295]: "10"
+        - button "Invocations and hadiths ▼" [ref=e297]:
+          - generic [ref=e298]: Invocations and hadiths
+          - generic [ref=e299]: ▼
+        - button "Display ▼" [ref=e301]:
+          - generic [ref=e302]: Display
+          - generic [ref=e303]: ▼
+        - button "Eid and Ramadan ▼" [ref=e305]:
+          - generic [ref=e306]: Eid and Ramadan
+          - generic [ref=e307]: ▼
+        - generic [ref=e308]:
+          - button "Save" [ref=e309]
+          - button "Cancel" [ref=e310]
+          - generic [ref=e311]: Saved ✓
+  - generic [ref=e29]:
+    - img [ref=e31]
+    - button "Open Tanstack query devtools" [ref=e79] [cursor=pointer]:
+      - img [ref=e80]
+  - button "Open Next.js Dev Tools" [ref=e133] [cursor=pointer]:
+    - img [ref=e134]
+  - alert [ref=e137]

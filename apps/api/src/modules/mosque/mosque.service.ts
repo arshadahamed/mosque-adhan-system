@@ -29,6 +29,13 @@ export async function getMosqueBySlug(slug: string) {
   return mosque;
 }
 
+export async function getMosqueById(id: string, requesterId?: string, requesterRole?: string) {
+  const mosque = await repo.findMosqueById(id);
+  if (!mosque) throw new AppError(404, "NOT_FOUND", "Mosque not found");
+  if (requesterId && requesterRole) await assertMosqueAccess(requesterId, id, requesterRole);
+  return mosque;
+}
+
 // ─── Admin: CRUD ──────────────────────────────────────────────────────────────
 
 export async function createMosque(
@@ -90,6 +97,11 @@ export async function deleteMosque(id: string, requesterId: string, requesterRol
   return repo.deleteMosque(id);
 }
 
+export async function getMosqueConfig(mosqueId: string, requesterId: string, requesterRole: string) {
+  await assertMosqueAccess(requesterId, mosqueId, requesterRole);
+  return repo.getMosqueConfig(mosqueId);
+}
+
 export async function updateConfig(
   mosqueId: string,
   section: string,
@@ -99,7 +111,7 @@ export async function updateConfig(
 ) {
   await assertMosqueAccess(requesterId, mosqueId, requesterRole);
 
-  const ALLOWED = ["regional", "athan", "iqama", "jumua", "display", "eid", "content", "durations"];
+  const ALLOWED = ["regional", "calculation", "offsets", "athan", "iqama", "jumua", "display", "eid", "content", "durations", "landscape"];
   if (!ALLOWED.includes(section)) throw new AppError(400, "INVALID_SECTION", `Unknown config section: ${section}`);
 
   return repo.upsertMosqueConfig(mosqueId, { [section]: value });

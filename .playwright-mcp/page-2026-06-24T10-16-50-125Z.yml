@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "🕌 Mawaqit" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: 🕌
+          - generic [ref=e8]: Mawaqit
+        - button "🌐 Language ▾" [ref=e10]:
+          - text: 🌐 Language
+          - generic [ref=e11]: ▾
+        - link "♥ Support Mawaqit" [ref=e12] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=e13]:
+          - link "👤 Register" [ref=e14] [cursor=pointer]:
+            - /url: /register
+          - link "↩ Log in" [ref=e15] [cursor=pointer]:
+            - /url: /login
+    - main [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - link "◀ All mosques" [ref=e21] [cursor=pointer]:
+              - /url: /dashboard/mosques
+            - generic [ref=e22]:
+              - generic [ref=e23]: 🕌
+              - generic [ref=e24]:
+                - heading "…" [level=1] [ref=e25]
+                - paragraph [ref=e26]:
+                  - generic [ref=e27]: ID
+                  - generic [ref=e28]: "|"
+                  - generic [ref=e29]: OFFLINE
+          - link "Edit" [ref=e31] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/edit
+        - generic [ref=e32]:
+          - link "📢 Announcements & Flash Messages Manage mosque announcements and flash messages Open →" [ref=e33] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/announcements
+            - generic [ref=e34]:
+              - generic [ref=e35]: 📢
+              - heading "Announcements & Flash Messages" [level=3] [ref=e36]
+            - paragraph [ref=e37]: Manage mosque announcements and flash messages
+            - generic [ref=e38]: Open →
+          - link "📅 Events Schedule and manage mosque events Open →" [ref=e39] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/events
+            - generic [ref=e40]:
+              - generic [ref=e41]: 📅
+              - heading "Events" [level=3] [ref=e42]
+            - paragraph [ref=e43]: Schedule and manage mosque events
+            - generic [ref=e44]: Open →
+          - link "🕐 Timetable Configure prayer timetable for all months Open →" [ref=e45] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/prayer-times
+            - generic [ref=e46]:
+              - generic [ref=e47]: 🕐
+              - heading "Timetable" [level=3] [ref=e48]
+            - paragraph [ref=e49]: Configure prayer timetable for all months
+            - generic [ref=e50]: Open →
+          - link "⚙️ Configure Prayer calculation, iqama, display settings Open →" [ref=e51] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/config
+            - generic [ref=e52]:
+              - generic [ref=e53]: ⚙️
+              - heading "Configure" [level=3] [ref=e54]
+            - paragraph [ref=e55]: Prayer calculation, iqama, display settings
+            - generic [ref=e56]: Open →
+          - link "✏️ Edit Details Update mosque name, address, contact info Open →" [ref=e57] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/edit
+            - generic [ref=e58]:
+              - generic [ref=e59]: ✏️
+              - heading "Edit Details" [level=3] [ref=e60]
+            - paragraph [ref=e61]: Update mosque name, address, contact info
+            - generic [ref=e62]: Open →
+          - link "🌐 Public Page View the public mosque display page Open →" [ref=e63] [cursor=pointer]:
+            - /url: /dashboard/mosques/cmqqyc6xr0001dix2gbvnvrwt/public
+            - generic [ref=e64]:
+              - generic [ref=e65]: 🌐
+              - heading "Public Page" [level=3] [ref=e66]
+            - paragraph [ref=e67]: View the public mosque display page
+            - generic [ref=e68]: Open →
+  - button "Open Next.js Dev Tools" [ref=e74] [cursor=pointer]:
+    - img [ref=e75]
