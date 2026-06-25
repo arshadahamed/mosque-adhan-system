@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AccordionSectionProps {
   title: string;
@@ -12,20 +14,23 @@ export function AccordionSection({ title, required, defaultOpen = false, childre
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="border border-border rounded overflow-hidden">
+    <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-medium bg-[#ddd6f8] hover:bg-[#ccc4f0] transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-zinc-50 transition-colors"
       >
-        <span>
+        <span className="text-sm font-semibold text-zinc-800">
           {title}
           {required && <span className="text-red-500 ml-1">*</span>}
         </span>
-        <span className="text-muted-foreground text-xs">{open ? "▲" : "▼"}</span>
+        <ChevronDown
+          size={16}
+          className={cn("text-zinc-400 transition-transform duration-200", open && "rotate-180")}
+        />
       </button>
       {open && (
-        <div className="p-4 bg-white border-t border-border">
+        <div className="px-5 pb-5 border-t border-zinc-100">
           {children}
         </div>
       )}

@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 
 interface YesNoToggleProps {
   value: boolean;
@@ -8,20 +7,22 @@ interface YesNoToggleProps {
 }
 
 export function YesNoToggle({ value, onChange, readOnly = false }: YesNoToggleProps) {
-  const handleClick = () => {
-    if (!readOnly && onChange) onChange(!value);
-  };
-
   return (
     <button
       type="button"
-      onClick={handleClick}
+      role="switch"
+      aria-checked={value}
       disabled={readOnly}
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold text-white transition-colors ${
-        value ? "bg-emerald-500 hover:bg-emerald-600" : "bg-red-500 hover:bg-red-600"
-      } ${readOnly ? "cursor-default" : "cursor-pointer"}`}
+      onClick={() => !readOnly && onChange?.(!value)}
+      className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:cursor-default ${
+        value ? "bg-violet-600" : "bg-zinc-200"
+      }`}
     >
-      {value ? "Yes" : "No"}
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+          value ? "translate-x-4" : "translate-x-0"
+        }`}
+      />
     </button>
   );
 }
@@ -35,12 +36,12 @@ interface ToggleFieldProps {
 
 export function ToggleField({ label, description, checked, onChange }: ToggleFieldProps) {
   return (
-    <div>
-      <div className="flex items-center gap-2">
-        <YesNoToggle value={checked} onChange={onChange} />
-        <span className="text-sm font-medium text-foreground">{label}</span>
+    <div className="flex items-start gap-3">
+      <YesNoToggle value={checked} onChange={onChange} />
+      <div>
+        <p className="text-sm font-medium text-zinc-700">{label}</p>
+        {description && <p className="text-xs text-zinc-500 mt-0.5">{description}</p>}
       </div>
-      {description && <p className="text-xs text-muted-foreground mt-1 ml-10">{description}</p>}
     </div>
   );
 }
