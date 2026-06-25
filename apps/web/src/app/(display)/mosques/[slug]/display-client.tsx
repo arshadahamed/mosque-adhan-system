@@ -170,7 +170,7 @@ export function DisplayClient({ mosque, widget: initialWidget }: Props) {
             return (
               <div
                 key={key}
-                className={`flex flex-col items-center rounded-xl px-6 py-4 min-w-27.5 transition-all duration-500 ${
+                className={`flex flex-col items-center rounded-xl px-6 py-4 min-w-[110px] transition-all duration-500 ${
                   isNext
                     ? "bg-purple-900/90 border border-purple-600/60 shadow-lg shadow-purple-900/50"
                     : "bg-transparent"
