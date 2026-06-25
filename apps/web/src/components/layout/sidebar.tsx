@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Building2, LayoutDashboard, User, LogOut, Menu, X, ChevronRight,
+  Building2, LayoutDashboard, User, LogOut, Menu, X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { api } from "@/lib/api";
