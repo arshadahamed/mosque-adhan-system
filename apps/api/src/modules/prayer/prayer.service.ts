@@ -2,6 +2,27 @@ import { AppError } from "../../middleware/error.js";
 import * as repo from "./prayer.repository.js";
 import { findMosqueById, findMosqueUser } from "../mosque/mosque.repository.js";
 
+export function getMosqueLocalDate(
+  timezone: string,
+  offsetDays = 0
+): { year: number; month: number; day: number } {
+  const base = new Date();
+  if (offsetDays !== 0) {
+    base.setUTCDate(base.getUTCDate() + offsetDays);
+  }
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(base);
+  return {
+    year:  parseInt(parts.find(p => p.type === "year")!.value),
+    month: parseInt(parts.find(p => p.type === "month")!.value),
+    day:   parseInt(parts.find(p => p.type === "day")!.value),
+  };
+}
+
 async function assertMosqueAccess(userId: string, mosqueId: string, role: string) {
   if (role === "SUPER_ADMIN") return;
   const link = await findMosqueUser(userId, mosqueId);
@@ -18,10 +39,7 @@ export async function getToday(mosqueId: string) {
   const mosque = await findMosqueById(mosqueId);
   if (!mosque) throw new AppError(404, "NOT_FOUND", "Mosque not found");
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
+  const { year, month, day } = getMosqueLocalDate(mosque.timezone);
 
   const result = await repo.findDay(mosqueId, year, month, day);
   if (!result?.days[0]) throw new AppError(404, "NO_SCHEDULE", "No prayer schedule available for today");
@@ -141,19 +159,11 @@ export async function getWidgetData(mosqueId: string) {
   const mosque = await findMosqueById(mosqueId);
   if (!mosque) throw new AppError(404, "NOT_FOUND", "Mosque not found");
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
+  const { year, month, day }               = getMosqueLocalDate(mosque.timezone);
+  const { year: tYear, month: tMonth, day: tDay } = getMosqueLocalDate(mosque.timezone, 1);
 
-  const todayResult = await repo.findDay(mosqueId, year, month, day);
-  const today = todayResult?.days[0] ?? null;
-
-  const tomorrowDate = new Date(now);
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-  const tYear = tomorrowDate.getFullYear();
-  const tMonth = tomorrowDate.getMonth() + 1;
-  const tDay = tomorrowDate.getDate();
+  const todayResult    = await repo.findDay(mosqueId, year,  month,  day);
+  const today          = todayResult?.days[0] ?? null;
 
   const tomorrowResult = await repo.findDay(mosqueId, tYear, tMonth, tDay);
   const tomorrow = tomorrowResult?.days[0] ?? null;
