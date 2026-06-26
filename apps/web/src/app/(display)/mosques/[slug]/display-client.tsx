@@ -621,10 +621,25 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
   const tickerDuration = Math.max(40, Math.round(tickerContent.length * 0.4) + 35);
 
   // Background from admin config
-  const dispCfg    = widget?.mosque.config?.display as { wallpaper?: string; bgImageUrl?: string; bgColor?: string } | undefined;
-  const bgImageUrl = dispCfg?.bgImageUrl ?? "";
-  const bgColorCfg = dispCfg?.bgColor ?? "";
-  const wallpaper  = dispCfg?.wallpaper ?? "void";
+  const dispCfg = widget?.mosque.config?.display as {
+    wallpaper?: string; bgImageUrl?: string; bgColor?: string;
+    cityName?: boolean; logo?: boolean; footer?: boolean;
+    prayersOnScreen?: boolean; blackScreen?: boolean;
+    hijriDate?: boolean; temperature?: boolean; theme?: string;
+  } | undefined;
+
+  const bgImageUrl       = dispCfg?.bgImageUrl ?? "";
+  const bgColorCfg       = dispCfg?.bgColor ?? "";
+  const wallpaper        = dispCfg?.wallpaper ?? "void";
+
+  // Display toggles — default true when not set (backwards-compatible)
+  const showCityName     = dispCfg?.cityName     !== false;
+  const showLogo         = dispCfg?.logo         !== false;
+  const showFooter       = dispCfg?.footer       !== false;
+  const showPrayerBar    = dispCfg?.prayersOnScreen !== false;
+  const showBlackScreen  = dispCfg?.blackScreen  !== false;
+  const showHijriDate    = dispCfg?.hijriDate    !== false;
+  const showTemperature  = dispCfg?.temperature  !== false;
   const containerBg: React.CSSProperties = bgImageUrl
     ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)), url(${bgImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
     : bgColorCfg
@@ -685,7 +700,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
     return <FlashMessageScreen message={msgs[0].content} total={msgs.length} current={1}/>;
   if (displayState.mode === "IQAMAH_COUNTDOWN") return <IqamahScreen state={displayState} is24h={is24h}/>;
   if (displayState.mode === "SILENCE")    return <SilenceScreen  prayer={displayState.prayer}/>;
-  if (displayState.mode === "PRAYER_DARK") return <PrayerDarkScreen prayer={displayState.prayer}/>;
+  if (displayState.mode === "PRAYER_DARK" && showBlackScreen) return <PrayerDarkScreen prayer={displayState.prayer}/>;
 
   // ── normal / pre-adhan display ───────────────────────────────────────────────
   return (
@@ -720,7 +735,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
           flexShrink: 0, transition: "border-color 0.5s, background 0.5s"
         }}>
           <div style={{ width: "5vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.2vw", borderRight: `1px solid ${GOLD_DIM}` }}>
-            {mosque.logoUrl ? (
+            {showLogo && mosque.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={mosque.logoUrl} alt={mosque.name} style={{ width: "4.5vh", height: "4.5vh", objectFit: "contain", borderRadius: "6px" }}/>
             ) : (
@@ -732,7 +747,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               <h1 style={{ margin: 0, fontSize: "3vw", fontWeight: 900, letterSpacing: "0.04em", lineHeight: 1, whiteSpace: "nowrap" }}>
                 {mosque.name.toUpperCase()}
               </h1>
-              {cityLabel && <span style={{ color: GOLD, fontSize: "1.8vw", fontWeight: 700, letterSpacing: "0.08em", flexShrink: 0 }}>· {cityLabel}</span>}
+              {showCityName && cityLabel && <span style={{ color: GOLD, fontSize: "1.8vw", fontWeight: 700, letterSpacing: "0.08em", flexShrink: 0 }}>· {cityLabel}</span>}
             </div>
             {mosque.associationName && (
               <div style={{ fontSize: "0.9vw", color: MUTED, letterSpacing: "0.1em", marginTop: "0.2vh", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -748,15 +763,17 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               </div>
             </div>
           )}
-          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(255,255,255,0.04)", border: `1px solid ${GOLD_DIM}`, borderRadius: "12px", padding: "0.8vh 1.4vw" }}>
-            <span style={{ fontSize: "3.5vw", lineHeight: 1 }}>{weather.icon}</span>
-            <div>
-              <div style={{ fontFamily: CLOCK, fontSize: "3vw", color: "#fbbf24", lineHeight: 1 }}>
-                {temp !== null ? `${temp}°${tempUnit}` : "--°"}
+          {showTemperature && (
+            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(255,255,255,0.04)", border: `1px solid ${GOLD_DIM}`, borderRadius: "12px", padding: "0.8vh 1.4vw" }}>
+              <span style={{ fontSize: "3.5vw", lineHeight: 1 }}>{weather.icon}</span>
+              <div>
+                <div style={{ fontFamily: CLOCK, fontSize: "3vw", color: "#fbbf24", lineHeight: 1 }}>
+                  {temp !== null ? `${temp}°${tempUnit}` : "--°"}
+                </div>
+                <div style={{ fontSize: "0.8vw", color: GOLD, letterSpacing: "0.12em", marginTop: "0.2vh" }}>{weather.label}</div>
               </div>
-              <div style={{ fontSize: "0.8vw", color: GOLD, letterSpacing: "0.12em", marginTop: "0.2vh" }}>{weather.label}</div>
             </div>
-          </div>
+          )}
         </header>
 
         {/* ═══ MIDDLE ═══════════════════════════════════════════════════════════ */}
@@ -924,10 +941,12 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               </div>
               <div style={{ height: "2px", background: `linear-gradient(90deg,${GOLD_LINE},transparent)` }}/>
               {/* Hijri dates on same row */}
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1vw" }}>
-                <div style={{ fontSize: "1.3vw", letterSpacing: "0.1em", color: MUTED, fontWeight: 600 }}>{hijriEn}</div>
-                {hijriAr && <div style={{ fontSize: "1.6vw", direction: "rtl", color: WHITE, fontWeight: 600 }}>{hijriAr}</div>}
-              </div>
+              {showHijriDate && (
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1vw" }}>
+                  <div style={{ fontSize: "1.3vw", letterSpacing: "0.1em", color: MUTED, fontWeight: 600 }}>{hijriEn}</div>
+                  {hijriAr && <div style={{ fontSize: "1.6vw", direction: "rtl", color: WHITE, fontWeight: 600 }}>{hijriAr}</div>}
+                </div>
+              )}
               {/* Bottom info row — Ramadan: Suhoor + Iftar; Friday: Sunrise + Jumu'ah; else: Sunrise */}
               <div style={{ display: "flex", gap: "0.8vw" }}>
                 {isRamadan ? (
@@ -1007,7 +1026,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
         </main>
 
         {/* ═══ PRAYER BAR ═══════════════════════════════════════════════════════ */}
-        <section style={{ display: "flex", gap: "1vw", padding: "0 1.5vw 1.1vh", flexShrink: 0 }}>
+        {showPrayerBar && <section style={{ display: "flex", gap: "1vw", padding: "0 1.5vw 1.1vh", flexShrink: 0 }}>
           {prayers.map((p) => {
             const isNext = nextPray?.key === p.key;
             const af = fmtTime(p.adhan, is24h);
@@ -1052,10 +1071,10 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               </div>
             );
           })}
-        </section>
+        </section>}
 
         {/* ═══ FOOTER ═══════════════════════════════════════════════════════════ */}
-        <footer style={{ display: "flex", alignItems: "stretch", height: "9vh", borderTop: `1px solid ${GOLD_DIM}`, background: "rgba(0,0,0,0.65)", flexShrink: 0, overflow: "hidden" }}>
+        {showFooter && <footer style={{ display: "flex", alignItems: "stretch", height: "9vh", borderTop: `1px solid ${GOLD_DIM}`, background: "rgba(0,0,0,0.65)", flexShrink: 0, overflow: "hidden" }}>
 
           {/* LEFT — QR code */}
           <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderRight: `1px solid ${GOLD_DIM}` }}>
@@ -1085,7 +1104,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
             </div>
           </div>
 
-        </footer>
+        </footer>}
 
       </div>
     </>
