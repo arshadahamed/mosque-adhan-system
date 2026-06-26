@@ -43,3 +43,8 @@ export function getNextPrayer(
 
   return null;
 }
+
+export function applyHijriAdjust(date: Date, adjustDays: number): Date {
+  if (adjustDays === 0) return date;
+  return new Date(date.getTime() + adjustDays * 86_400_000);
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { addMinutes, formatCountdown, getNextPrayer } from "@/lib/display-utils";
+import { addMinutes, formatCountdown, getNextPrayer, applyHijriAdjust } from "@/lib/display-utils";
 
 describe("addMinutes", () => {
   it("adds minutes within the same hour", () => {
@@ -63,5 +63,24 @@ describe("getNextPrayer", () => {
   it("returns null when all prayers passed and no tomorrow", () => {
     const now = new Date(2026, 0, 1, 22, 0, 0);
     expect(getNextPrayer(prayers, now, null)).toBeNull();
+  });
+});
+
+describe("applyHijriAdjust", () => {
+  it("returns the same date for adjustment 0", () => {
+    const d = new Date("2026-01-15T12:00:00Z");
+    expect(applyHijriAdjust(d, 0).getTime()).toBe(d.getTime());
+  });
+
+  it("adds +1 day for adjustment +1", () => {
+    const d = new Date("2026-01-15T12:00:00Z");
+    const result = applyHijriAdjust(d, 1);
+    expect(result.getTime()).toBe(d.getTime() + 86_400_000);
+  });
+
+  it("subtracts 2 days for adjustment -2", () => {
+    const d = new Date("2026-01-15T12:00:00Z");
+    const result = applyHijriAdjust(d, -2);
+    expect(result.getTime()).toBe(d.getTime() - 2 * 86_400_000);
   });
 });

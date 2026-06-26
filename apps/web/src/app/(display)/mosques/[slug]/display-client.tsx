@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { addMinutes, formatCountdown, getNextPrayer, type NextPrayer } from "@/lib/display-utils";
+import { addMinutes, formatCountdown, getNextPrayer, applyHijriAdjust, type NextPrayer } from "@/lib/display-utils";
 
 // ── interfaces ──────────────────────────────────────────────────────────────────
 interface PrayerDay {
@@ -559,6 +559,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
   }, [widget]);
 
   const is24h = widget?.mosque.config?.regional?.timeFormat === "24";
+  const hijriAdjustDays = (widget?.mosque.config?.regional as { hijriAdjust?: number } | undefined)?.hijriAdjust ?? 0;
 
   let clockHM = "--:--", ampm = "", secs = "--", hijriEn = "", hijriAr = "", dayLabel = "", gregDate = "";
   if (now) {
@@ -578,9 +579,10 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
     }
     dayLabel = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
     gregDate = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }).toUpperCase();
+    const hijriNow = applyHijriAdjust(now, hijriAdjustDays);
     hijriEn  = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" })
-                   .format(now).replace(" AH", "").toUpperCase();
-    try { hijriAr = new Intl.DateTimeFormat("ar-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" }).format(now); } catch {}
+                   .format(hijriNow).replace(" AH", "").toUpperCase();
+    try { hijriAr = new Intl.DateTimeFormat("ar-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" }).format(hijriNow); } catch {}
   }
 
   const tFajr    = widget?.tomorrow ? { fajr: widget.tomorrow.fajr } : null;
