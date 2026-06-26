@@ -423,6 +423,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
   const [displayUrl, setDisplayUrl] = useState("");
   const [coords, setCoords]   = useState({ lat: mosque.latitude, lon: mosque.longitude });
   const [showFlash, setShowFlash] = useState(false);
+  const [flashIndex, setFlashIndex] = useState(0);
   const refreshRef            = useRef<() => void>(() => {});
   const pendingFlashRef       = useRef(false); // set by SSE, consumed on next widget update
 
@@ -553,10 +554,20 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
     pendingFlashRef.current = false;
     const flashMsgs = widget?.flashMessages ?? [];
     if (!flashMsgs.length) return;
+    setFlashIndex(0);
     setShowFlash(true);
     const t = setTimeout(() => setShowFlash(false), 12_000);
     return () => clearTimeout(t);
   }, [widget]);
+
+  // Cycle through multiple flash messages every 4 seconds
+  useEffect(() => {
+    if (!showFlash || msgs.length <= 1) return;
+    const id = setInterval(() => {
+      setFlashIndex(i => (i + 1) % msgs.length);
+    }, 4_000);
+    return () => clearInterval(id);
+  }, [showFlash, msgs.length]);
 
   const is24h = widget?.mosque.config?.regional?.timeFormat === "24";
   const hijriAdjustDays = (widget?.mosque.config?.regional as { hijriAdjust?: number } | undefined)?.hijriAdjust ?? 0;
@@ -699,7 +710,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
   if (isJumuahBlocked) return <JumuaScreen/>;
   if (isPreJumua && preJumuaTime) return <PreJumuahScreen jumuaTime={preJumuaTime} is24h={is24h} mosqueName={mosque.name}/>;
   if (showFlash && msgs.length > 0 && displayState.mode === "NORMAL")
-    return <FlashMessageScreen message={msgs[0].content} total={msgs.length} current={1}/>;
+    return <FlashMessageScreen message={msgs[flashIndex]?.content ?? ""} total={msgs.length} current={flashIndex + 1}/>;
   if (displayState.mode === "IQAMAH_COUNTDOWN") return <IqamahScreen state={displayState} is24h={is24h}/>;
   if (displayState.mode === "SILENCE")    return <SilenceScreen  prayer={displayState.prayer}/>;
   if (displayState.mode === "PRAYER_DARK" && showBlackScreen) return <PrayerDarkScreen prayer={displayState.prayer}/>;
