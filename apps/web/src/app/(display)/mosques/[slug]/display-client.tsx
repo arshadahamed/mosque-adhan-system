@@ -1,198 +1,1093 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { addMinutes, formatCountdown, getNextPrayer, type NextPrayer } from "@/lib/display-utils";
 
+// ── interfaces ──────────────────────────────────────────────────────────────────
 interface PrayerDay {
   year: number; month: number; day: number;
   fajr: string; shuruq: string; dhuhr: string; asr: string; maghrib: string; isha: string;
 }
-
 interface WidgetData {
   mosque: {
     id: string; slug: string; name: string; timezone: string;
     config?: {
+      regional?: { timeFormat?: string; tempUnit?: string };
       iqama?: { fajr?: number; dhuhr?: number; asr?: number; maghrib?: number; isha?: number };
-      jumua?: { time1?: string; time2?: string; jumua2Enabled?: boolean };
+      jumua?: { time1?: string; time2?: string; time3?: string; enabled?: boolean; blockScreen?: boolean; duration?: number; reminder?: boolean };
+      display?: { wallpaper?: string; bgImageUrl?: string; bgColor?: string };
+      durations?: { fajr?: number; dhuhr?: number; asr?: number; maghrib?: number; isha?: number };
     };
   };
   today: PrayerDay | null;
   tomorrow: PrayerDay | null;
   flashMessages?: { content: string }[];
 }
-
 interface MosqueData {
-  id: string; name: string; latitude: number; longitude: number; status: string;
+  id: string; name: string; city?: string; latitude: number; longitude: number; status: string;
+  logoUrl?: string; associationName?: string; paymentUrl?: string;
 }
-
 interface Props { mosque: MosqueData; widget: WidgetData | null }
 
-const PRAYER_KEYS = ["fajr", "dhuhr", "asr", "maghrib", "isha"] as const;
-const PRAYER_LABELS: Record<string, string> = {
-  fajr: "Fajr", dhuhr: "Dhuhr", asr: "Asr", maghrib: "Maghrib", isha: "Isha",
+// ── display state machine ───────────────────────────────────────────────────────
+type DisplayMode = "NORMAL" | "PRE_ADHAN" | "IQAMAH_COUNTDOWN" | "SILENCE" | "PRAYER_DARK";
+
+interface PrayerEntry {
+  key: string; label: string; arabic: string; color: string;
+  isDark: boolean; adhan: string; iqamaTime: string;
+}
+interface DisplayState {
+  mode: DisplayMode;
+  prayer?: PrayerEntry;
+  secondsUntilIqamah?: number;
+}
+
+// Estimated prayer durations in minutes (after iqamah)
+const PRAYER_DURATION: Record<string, number> = {
+  fajr: 18, dhuhr: 12, asr: 12, maghrib: 8, isha: 15,
 };
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+const SILENCE_SECS    = 8;
+const PRE_ADHAN_SECS  = 10 * 60;
+const PRE_JUMUA_SECS  = 20 * 60; // reminder screen 20 min before Jumu'ah
 
-export function DisplayClient({ mosque, widget: initialWidget }: Props) {
-  const [widget, setWidget] = useState<WidgetData | null>(initialWidget);
-  const [now, setNow] = useState(new Date());
-  const [temperature, setTemperature] = useState<number | null>(null);
+function timeToSec(hhmm: string | undefined): number {
+  if (!hhmm?.includes(":")) return -1;
+  const [h, m] = hhmm.split(":").map(Number);
+  return isNaN(h) || isNaN(m) ? -1 : h * 3600 + m * 60;
+}
 
-  // 1-second clock tick
+// Returns undefined for blank, "00:00", or midnight — so callers can fall back to Dhuhr
+function validJumuaTime(t: string | undefined): string | undefined {
+  if (!t?.trim()) return undefined;
+  const sec = timeToSec(t);
+  return sec > 0 ? t : undefined;
+}
+
+function computeState(now: Date, prayers: PrayerEntry[], durations: Record<string, number>): DisplayState {
+  const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  for (const prayer of prayers) {
+    const adhanSec  = timeToSec(prayer.adhan);
+    const iqamaSec  = timeToSec(prayer.iqamaTime);
+    if (adhanSec < 0 || iqamaSec < 0) continue;
+    const prayerEnd = iqamaSec + (durations[prayer.key] ?? PRAYER_DURATION[prayer.key] ?? 12) * 60;
+
+    if (nowSec >= iqamaSec + SILENCE_SECS && nowSec < prayerEnd)
+      return { mode: "PRAYER_DARK", prayer };
+    if (nowSec >= iqamaSec && nowSec < iqamaSec + SILENCE_SECS)
+      return { mode: "SILENCE", prayer };
+    if (nowSec >= adhanSec && nowSec < iqamaSec && iqamaSec > adhanSec)
+      return { mode: "IQAMAH_COUNTDOWN", prayer, secondsUntilIqamah: iqamaSec - nowSec };
+    if (nowSec >= adhanSec - PRE_ADHAN_SECS && nowSec < adhanSec)
+      return { mode: "PRE_ADHAN", prayer };
+  }
+  return { mode: "NORMAL" };
+}
+
+// ── constants ───────────────────────────────────────────────────────────────────
+const DARK      = "#06080a";
+const CARD      = "rgba(9,18,13,0.97)";
+const GOLD      = "#c8a84a";
+const GOLD_DIM  = "rgba(200,168,74,0.22)";
+const GOLD_LINE = "rgba(200,168,74,0.45)";
+const GREEN     = "#22c55e";
+const GREEN_DIM = "rgba(34,197,94,0.15)";
+const AMBER     = "#f59e0b";
+const AMBER_DIM = "rgba(245,158,11,0.15)";
+const RED        = "#ef4444";
+const RED_DIM    = "rgba(239,68,68,0.15)";
+const ORANGE     = "#f97316";
+const TEAL       = "#2dd4bf";
+const TEAL_DIM   = "rgba(45,212,191,0.12)";
+const WHITE     = "#f2f2f0";
+const MUTED     = "rgba(242,242,240,0.5)";
+const MONO      = "var(--font-orbitron), 'Courier New', monospace";
+const CLOCK     = "var(--font-bebas), 'Bebas Neue', impact, sans-serif";
+const API       = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+
+const WALLPAPER_BG: Record<string, string> = {
+  "void":        "linear-gradient(135deg,#080808,#141414)",
+  "dark-purple": "linear-gradient(135deg,#1a0533,#3d0066)",
+  "blue":        "linear-gradient(135deg,#0a1628,#1a3a5c)",
+  "green":       "linear-gradient(135deg,#002200,#005500)",
+  "cosmic":      "linear-gradient(135deg,#050510,#1a0a3c)",
+  "teal":        "linear-gradient(135deg,#003333,#006666)",
+  "charcoal":    "linear-gradient(135deg,#1c1c1c,#2d2d2d)",
+  "amber":       "linear-gradient(135deg,#1a0a00,#3d1a00)",
+  "dawn":        "linear-gradient(135deg,#0d0d1a,#2a1a2e)",
+  "deep-sea":    "linear-gradient(135deg,#000033,#001a33)",
+  "mosque":      "linear-gradient(135deg,#2c1810,#5c3a2a)",
+  "night":       "linear-gradient(135deg,#050510,#0a0a1a)",
+};
+
+const DEFAULT_QUOTE = "Indeed, prayer has been decreed upon the believers a decree of specified times.";
+const DEFAULT_REF   = "— An-Nisa 4:103";
+
+const PRAYER_CFG = [
+  { key: "fajr",    label: "FAJR",    arabic: "الفجر",  isDark: true,  color: "#818cf8" },
+  { key: "dhuhr",   label: "DHUHR",   arabic: "الظهر",  isDark: false, color: "#fbbf24" },
+  { key: "asr",     label: "ASR",     arabic: "العصر",  isDark: false, color: "#fb923c" },
+  { key: "maghrib", label: "MAGHRIB", arabic: "المغرب", isDark: false, color: "#f87171" },
+  { key: "isha",    label: "ISHA",    arabic: "العشاء", isDark: true,  color: "#a78bfa" },
+] as const;
+
+// ── SVG icons ───────────────────────────────────────────────────────────────────
+const IconMosque = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 60 56" width={size} height={size} fill={color}>
+    <ellipse cx="30" cy="22" rx="12" ry="9"/>
+    <rect x="26" y="22" width="8" height="26" rx="1"/>
+    <rect x="6" y="36" width="48" height="14" rx="3"/>
+    <ellipse cx="30" cy="36" rx="13" ry="7"/>
+    <rect x="12" y="40" width="5" height="8" rx="2" fill={DARK}/>
+    <rect x="43" y="40" width="5" height="8" rx="2" fill={DARK}/>
+    <rect x="27" y="10" width="6" height="12" rx="1"/>
+    <circle cx="30" cy="8" r="4.5"/>
+    <circle cx="32" cy="6.5" r="3.5" fill={DARK}/>
+  </svg>
+);
+const IconClock = ({ size = "1em", color = "currentColor" }: { size?: string; color?: string }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+  </svg>
+);
+const IconBook = ({ size = "1em" }: { size?: string }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    <line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/>
+  </svg>
+);
+const IconPhoneOff = ({ size = "1em" }: { size?: string }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="2" width="14" height="20" rx="2"/>
+    <line x1="5" y1="2" x2="19" y2="22" strokeWidth="2.5"/>
+    <circle cx="12" cy="17" r="1" fill="currentColor"/>
+  </svg>
+);
+const IconCrescent = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 40 40" width={size} height={size} fill={color}>
+    <path d="M20 4 A16 16 0 1 0 36 20 A12 12 0 1 1 20 4 Z"/>
+    <polygon points="27,6 29,12 35,12 30,16 32,22 27,18 22,22 24,16 19,12 25,12"/>
+  </svg>
+);
+const IconSun = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+    <circle cx="12" cy="12" r="4" fill={color} stroke="none"/>
+    {["12,2 12,5","19,12 22,12","12,19 12,22","4.22,4.22 6.34,6.34","17.66,17.66 19.78,19.78","4.22,19.78 6.34,17.66","17.66,6.34 19.78,4.22","2,12 5,12"].map((p, i) => <line key={i} x1={p.split(" ")[0].split(",")[0]} y1={p.split(" ")[0].split(",")[1]} x2={p.split(" ")[1].split(",")[0]} y2={p.split(" ")[1].split(",")[1]}/>)}
+  </svg>
+);
+const IconMoon = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill={color}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+// ── weather ──────────────────────────────────────────────────────────────────────
+function getWeather(code: number | null): { label: string; icon: string } {
+  if (code === null) return { label: "WEATHER",       icon: "—"  };
+  if (code === 0)    return { label: "CLEAR SKY",     icon: "☀️" };
+  if (code === 1)    return { label: "MAINLY CLEAR",  icon: "🌤️" };
+  if (code === 2)    return { label: "PARTLY CLOUDY", icon: "⛅" };
+  if (code === 3)    return { label: "OVERCAST",      icon: "☁️" };
+  if (code <= 48)    return { label: "FOGGY",         icon: "🌫️" };
+  if (code <= 55)    return { label: "DRIZZLE",       icon: "🌦️" };
+  if (code <= 65)    return { label: "RAIN",          icon: "🌧️" };
+  if (code <= 75)    return { label: "SNOW",          icon: "❄️" };
+  if (code <= 82)    return { label: "SHOWERS",       icon: "🌦️" };
+  return             { label: "THUNDERSTORM",         icon: "⛈️" };
+}
+
+function fmtTime(time: string | undefined, is24h: boolean): { hm: string; ampm: string } {
+  if (!time?.includes(":")) return { hm: "--:--", ampm: "" };
+  const [h, m] = time.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return { hm: "--:--", ampm: "" };
+  if (is24h) return { hm: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`, ampm: "" };
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return { hm: `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")}`, ampm: h >= 12 ? "PM" : "AM" };
+}
+
+// ── countdown display helper ──────────────────────────────────────────────────────
+function CountdownDigits({ seconds, color, fontSize = "10vw" }: { seconds: number; color: string; fontSize?: string }) {
+  const [cH, cM, cS] = formatCountdown(seconds).split(":");
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: "0.5vw" }}>
+      {[{ v: cH, l: "HRS" }, { v: cM, l: "MINS" }, { v: cS, l: "SECS" }].map(({ v, l }, i) => (
+        <div key={l} style={{ display: "flex", alignItems: "flex-end", gap: "0.5vw" }}>
+          {i > 0 && <span style={{ fontFamily: CLOCK, color, fontSize, lineHeight: 0.85, paddingBottom: "1.8vh" }}>:</span>}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontFamily: CLOCK, fontSize, color, lineHeight: 0.85 }}>{v}</div>
+            <div style={{ fontSize: "0.9vw", color: GOLD, letterSpacing: "0.15em", marginTop: "0.4vh" }}>{l}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── progress ring SVG ─────────────────────────────────────────────────────────────
+function ProgressRing({ totalSecs, remainingSecs, color, size = "38vw" }: { totalSecs: number; remainingSecs: number; color: string; size?: string }) {
+  const progress = Math.max(0, Math.min(1, (totalSecs - remainingSecs) / Math.max(1, totalSecs)));
+  const r = 88; const circ = 2 * Math.PI * r;
+  return (
+    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+      <svg viewBox="0 0 200 200" style={{ width: size, height: size }}>
+        <circle cx="100" cy="100" r={r} fill="none" stroke={`${color}18`} strokeWidth="7"/>
+        <circle cx="100" cy="100" r={r} fill="none" stroke={color} strokeWidth="7"
+          strokeDasharray={`${progress * circ} ${circ}`} strokeLinecap="round"
+          transform="rotate(-90 100 100)" style={{ transition: "stroke-dasharray 1s linear" }}/>
+        {/* Small tick at full position */}
+        <circle cx="100" cy="12" r="5" fill={`${color}55`}/>
+      </svg>
+    </div>
+  );
+}
+
+// ── fullscreen overlay screens ───────────────────────────────────────────────────
+function IqamahScreen({ state, is24h }: { state: DisplayState; is24h: boolean }) {
+  const p = state.prayer!;
+  const secs = state.secondsUntilIqamah ?? 0;
+  const af = fmtTime(p.adhan, is24h);
+  const qf = fmtTime(p.iqamaTime, is24h);
+  const totalSecs = Math.max(60, timeToSec(p.iqamaTime) - timeToSec(p.adhan));
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#050809", color: WHITE, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.8vh", padding: "2vh 4vw" }}>
+      {/* Prayer name */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontFamily: MONO, fontSize: "9vw", fontWeight: 900, color: WHITE, lineHeight: 1.05, letterSpacing: "0.04em" }}>
+          {p.label.toUpperCase()}
+        </div>
+        <div style={{ fontSize: "2.8vw", color: MUTED, direction: "rtl" }}>{p.arabic}</div>
+      </div>
+
+      {/* Progress ring + countdown */}
+      <div style={{ position: "relative", width: "38vw", height: "38vw", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <ProgressRing totalSecs={totalSecs} remainingSecs={secs} color={GREEN} size="38vw"/>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6vh", position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5vw", color: GREEN }}>
+            <IconClock size="1.2vw"/>
+            <span style={{ fontSize: "1vw", fontWeight: 800, letterSpacing: "0.3em" }}>IQAMAH IN</span>
+          </div>
+          <CountdownDigits seconds={secs} color={GREEN} fontSize="8vw"/>
+        </div>
+      </div>
+
+      {/* Gold divider */}
+      <div style={{ width: "50vw", height: "2px", background: `linear-gradient(90deg,transparent,${GOLD_LINE},transparent)` }}/>
+
+      {/* Adhan / Iqamah times */}
+      <div style={{ display: "flex", gap: "6vw", alignItems: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "1.1vw", fontWeight: 700, letterSpacing: "0.2em", color: GREEN, marginBottom: "0.5vh" }}>ADHAN</div>
+          <div style={{ fontFamily: CLOCK, fontSize: "4.5vw", color: WHITE }}>{af.hm}</div>
+          <div style={{ fontSize: "1.4vw", color: MUTED, marginTop: "0.3vh" }}>{af.ampm}</div>
+        </div>
+        <div style={{ width: "1px", height: "8vh", background: GOLD_LINE }}/>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "1.1vw", fontWeight: 700, letterSpacing: "0.2em", color: GOLD, marginBottom: "0.5vh" }}>IQAMAH</div>
+          <div style={{ fontFamily: CLOCK, fontSize: "4.5vw", color: WHITE }}>{qf.hm}</div>
+          <div style={{ fontSize: "1.4vw", color: MUTED, marginTop: "0.3vh" }}>{qf.ampm}</div>
+        </div>
+      </div>
+
+      {/* Verse */}
+      <p style={{ fontSize: "1vw", fontStyle: "italic", color: MUTED, textAlign: "center", margin: 0, maxWidth: "50vw", lineHeight: 1.7 }}>
+        ❝ Hasten to prayer, hasten to success. ❞
+        <span style={{ display: "block", color: GOLD, fontStyle: "normal", marginTop: "0.3vh" }}>— Adhan</span>
+      </p>
+    </div>
+  );
+}
+
+function SilenceScreen({ prayer }: { prayer?: PrayerEntry }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3.5vh" }}>
+      <div style={{ color: WHITE, opacity: 0.9 }}><IconPhoneOff size="14vw"/></div>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "6.5vw", fontWeight: 900, letterSpacing: "0.08em", lineHeight: 1.15, color: WHITE }}>
+          PUT YOUR PHONE<br/>ON SILENCE
+        </div>
+        {prayer && (
+          <div style={{ fontSize: "2.5vw", color: GOLD, marginTop: "2vh", letterSpacing: "0.18em", fontWeight: 700 }}>
+            {prayer.label.toUpperCase()} PRAYER IS ABOUT TO BEGIN
+          </div>
+        )}
+      </div>
+      <div style={{ fontSize: "1.3vw", color: MUTED, letterSpacing: "0.2em", marginTop: "1vh" }}>
+        جَعَلَ اللَّهُ أَذَانَكَ نُوراً
+      </div>
+    </div>
+  );
+}
+
+function PrayerDarkScreen({ prayer }: { prayer?: PrayerEntry }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#020304", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2vh" }}>
+      <div style={{ color: GOLD, opacity: 0.12 }}><IconMosque size="24vw" color={GOLD}/></div>
+      <div style={{ textAlign: "center", marginTop: "-8vw" }}>
+        {prayer && (
+          <div style={{ fontFamily: MONO, fontSize: "5vw", fontWeight: 900, color: "rgba(242,242,240,0.6)", letterSpacing: "0.1em" }}>
+            {prayer.label.toUpperCase()}
+          </div>
+        )}
+        <div style={{ fontSize: "2vw", color: GOLD, letterSpacing: "0.25em", fontWeight: 700, marginTop: "1vh" }}>
+          PRAYER IN PROGRESS
+        </div>
+        <div style={{ fontSize: "1.1vw", color: MUTED, marginTop: "1.5vh", fontStyle: "italic" }}>
+          ❝ Indeed, prayer prohibits immorality and wrongdoing. ❞
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Jumu'ah block screen ─────────────────────────────────────────────────────────
+function JumuaScreen() {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#000", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3vh" }}>
+      <div style={{ color: GOLD, opacity: 0.1 }}><IconMosque size="28vw" color={GOLD}/></div>
+      <div style={{ textAlign: "center", marginTop: "-10vw" }}>
+        <div style={{ fontFamily: MONO, fontSize: "6vw", fontWeight: 900, color: GOLD, letterSpacing: "0.08em", lineHeight: 1.1 }}>
+          JUMU&apos;AH
+        </div>
+        <div style={{ fontSize: "2.2vw", color: WHITE, letterSpacing: "0.3em", fontWeight: 700, marginTop: "1vh", opacity: 0.85 }}>
+          FRIDAY PRAYER IN PROGRESS
+        </div>
+        <div style={{ fontSize: "1.2vw", color: MUTED, marginTop: "2vh", fontStyle: "italic", letterSpacing: "0.05em" }}>
+          ❝ O you who believe! When the call is made for prayer on Friday, hasten to the remembrance of Allah. ❞
+        </div>
+        <div style={{ fontSize: "1vw", color: GOLD, marginTop: "0.5vh" }}>— Al-Jumu&apos;ah 62:9</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Pre-Jumu'ah reminder screen ──────────────────────────────────────────────────
+function PreJumuahScreen({ jumuaTime, is24h, mosqueName }: { jumuaTime: string; is24h: boolean; mosqueName: string }) {
+  const jf = fmtTime(jumuaTime, is24h);
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 195, background: "linear-gradient(135deg,#030a04,#071408)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2.5vh" }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.05, pointerEvents: "none" }}>
+        <IconCrescent size="65vw" color={GOLD}/>
+      </div>
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.8vh" }}>
+        <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.5em", color: GOLD, opacity: 0.8 }}>FRIDAY · {mosqueName.toUpperCase()}</div>
+        <div style={{ fontFamily: MONO, fontSize: "7vw", fontWeight: 900, color: GOLD, letterSpacing: "0.06em", lineHeight: 1.05 }}>
+          JUMU&apos;AH
+        </div>
+        <div style={{ fontSize: "2vw", color: WHITE, letterSpacing: "0.25em", fontWeight: 700 }}>PRAYER BEGINS AT</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "1vw" }}>
+          <span style={{ fontFamily: CLOCK, fontSize: "12vw", color: GREEN, lineHeight: 1 }}>{jf.hm}</span>
+          {jf.ampm && <span style={{ fontSize: "3vw", color: GREEN, fontWeight: 700 }}>{jf.ampm}</span>}
+        </div>
+        <div style={{ width: "45vw", height: "2px", background: `linear-gradient(90deg,transparent,${GOLD_LINE},transparent)` }}/>
+        <div style={{ fontSize: "1.2vw", color: MUTED, fontStyle: "italic", maxWidth: "55vw", lineHeight: 1.75 }}>
+          ❝ O you who believe! When the call is made for prayer on Friday, hasten to the remembrance of Allah and leave off business. ❞
+          <span style={{ display: "block", color: GOLD, fontStyle: "normal", marginTop: "0.4vh", fontSize: "1vw" }}>— Al-Jumu&apos;ah 62:9</span>
+        </div>
+        <div style={{ fontSize: "1.4vw", fontWeight: 800, letterSpacing: "0.2em", color: WHITE, background: `rgba(34,197,94,0.12)`, border: `1px solid ${GREEN}55`, borderRadius: "12px", padding: "0.8vh 2.5vw" }}>
+          PLEASE PREPARE FOR PRAYER
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── flash message fullscreen ─────────────────────────────────────────────────────
+function FlashMessageScreen({ message, total, current }: { message: string; total: number; current: number }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "linear-gradient(135deg,#020d06,#041a0a)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "6vh 10vw", textAlign: "center", gap: "4vh" }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.07, pointerEvents: "none" }}>
+        <IconCrescent size="55vw" color={GOLD}/>
+      </div>
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "3vh" }}>
+        <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.45em", color: GOLD, opacity: 0.85 }}>ANNOUNCEMENT</div>
+        <div style={{ fontSize: "5.5vw", fontWeight: 900, color: WHITE, lineHeight: 1.35, maxWidth: "80vw" }}>
+          {message}
+        </div>
+        {total > 1 && (
+          <div style={{ display: "flex", gap: "0.7vw", marginTop: "1vh" }}>
+            {Array.from({ length: total }).map((_, i) => (
+              <div key={i} style={{ width: "0.8vw", height: "0.8vw", borderRadius: "50%", background: i === current - 1 ? GOLD : "rgba(200,168,74,0.25)", transition: "background 0.4s" }}/>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── main component ───────────────────────────────────────────────────────────────
+export function DisplayClient({ mosque, widget: initial }: Props) {
+  const [widget, setWidget]   = useState<WidgetData | null>(initial);
+  const [now, setNow]         = useState<Date | null>(null);
+  const [temp, setTemp]       = useState<number | null>(null);
+  const [wCode, setWCode]     = useState<number | null>(null);
+  const [displayUrl, setDisplayUrl] = useState("");
+  const [coords, setCoords]   = useState({ lat: mosque.latitude, lon: mosque.longitude });
+  const [showFlash, setShowFlash] = useState(false);
+  const refreshRef            = useRef<() => void>(() => {});
+  const pendingFlashRef       = useRef(false); // set by SSE, consumed on next widget update
+
+  // Tick every second
   useEffect(() => {
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // Temperature polling — every 5 minutes
-  const fetchTemp = useCallback(async () => {
+  // Widget refresh — every 60 seconds for live config sync
+  const refreshWidget = useCallback(async () => {
     try {
-      const res = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${mosque.latitude}&longitude=${mosque.longitude}&current=temperature_2m&temperature_unit=celsius`
-      );
-      const json = await res.json();
-      setTemperature(Math.round(json.current.temperature_2m));
+      const r = await fetch(`${API}/mosques/${mosque.id}/widget`);
+      if (r.ok) setWidget((await r.json()).data);
     } catch {}
-  }, [mosque.latitude, mosque.longitude]);
-
-  useEffect(() => {
-    fetchTemp();
-    const id = setInterval(fetchTemp, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [fetchTemp]);
-
-  // Prayer data refresh — every 10 minutes (handles midnight rollover)
-  useEffect(() => {
-    const id = setInterval(async () => {
-      try {
-        const res = await fetch(`${API}/mosques/${mosque.id}/widget`);
-        if (res.ok) {
-          const json = await res.json();
-          setWidget(json.data);
-        }
-      } catch {}
-    }, 10 * 60 * 1000);
-    return () => clearInterval(id);
   }, [mosque.id]);
 
-  // Derived values
-  const today = widget?.today ?? null;
-  const iqama = widget?.mosque.config?.iqama ?? {};
-  const jumua = widget?.mosque.config?.jumua;
-  const flashMessages = widget?.flashMessages ?? [];
+  useEffect(() => {
+    refreshRef.current = refreshWidget;
+  }, [refreshWidget]);
 
-  const hijriDate = new Intl.DateTimeFormat("en-TN-u-ca-islamic-umalqura", {
-    day: "numeric", month: "long", year: "numeric",
-  }).format(now);
+  // Capture display URL for QR code (needs window, so runs after mount)
+  useEffect(() => {
+    setDisplayUrl(window.location.href);
+  }, []);
 
-  const clockHMS = now.toLocaleTimeString("en-US", {
-    hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
-  });
+  // Use device geolocation for weather accuracy; fall back to mosque coords
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      () => {} // keep mosque coords silently on denial or error
+    );
+  }, []);
 
-  const prayers = today
-    ? PRAYER_KEYS.map((key) => ({
-        key,
-        label: PRAYER_LABELS[key],
-        adhan: today[key],
-        iqamaTime: addMinutes(today[key], (iqama as Record<string, number>)[key] ?? 0),
+  // Real-time config updates via SSE
+  useEffect(() => {
+    const source = new EventSource(`${API}/mosques/${mosque.id}/events`);
+    source.onmessage = (e) => {
+      try {
+        const { type } = JSON.parse(e.data);
+        if (type === "config-updated") {
+          pendingFlashRef.current = true;
+          refreshRef.current();
+        }
+      } catch {}
+    };
+    return () => source.close();
+  }, [mosque.id]);
+
+  // Fallback polling every 30 seconds
+  useEffect(() => {
+    const id = setInterval(() => refreshRef.current(), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Also refresh immediately when the display tab becomes visible (e.g. after admin changes config)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === "visible") refreshRef.current(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
+
+  // Derived early so fetchWeather callback can close over the current unit
+  const tempUnit = (widget?.mosque.config?.regional?.tempUnit ?? "C") as "C" | "F";
+
+  // Weather every 5 minutes — re-fetches immediately when unit or coords change
+  const fetchWeather = useCallback(async () => {
+    const unit = tempUnit === "F" ? "fahrenheit" : "celsius";
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&temperature_unit=${unit}`);
+      const j = await r.json();
+      if (j.current?.temperature_2m != null) setTemp(Math.round(j.current.temperature_2m));
+      if (j.current?.weather_code    != null) setWCode(j.current.weather_code);
+    } catch {}
+  }, [coords.lat, coords.lon, tempUnit]);
+
+  useEffect(() => { fetchWeather(); const id = setInterval(fetchWeather, 5 * 60_000); return () => clearInterval(id); }, [fetchWeather]);
+
+  // Refresh widget when prayer transitions happen
+  const prevMode = useRef<DisplayMode>("NORMAL");
+
+  // ── derived ──────────────────────────────────────────────────────────────────
+  const today     = widget?.today ?? null;
+  const iqamaCfg  = widget?.mosque.config?.iqama ?? {};
+  const iqamaEnabled = (iqamaCfg as { enabled?: boolean }).enabled !== false;
+  const jumua     = widget?.mosque.config?.jumua;
+  const msgs      = widget?.flashMessages ?? [];
+
+  // Prayer durations: admin config overrides hardcoded fallbacks
+  const durCfg = widget?.mosque.config?.durations ?? {};
+  const prayerDurations: Record<string, number> = {
+    fajr:    durCfg.fajr    ?? PRAYER_DURATION.fajr,
+    dhuhr:   durCfg.dhuhr   ?? PRAYER_DURATION.dhuhr,
+    asr:     durCfg.asr     ?? PRAYER_DURATION.asr,
+    maghrib: durCfg.maghrib ?? PRAYER_DURATION.maghrib,
+    isha:    durCfg.isha    ?? PRAYER_DURATION.isha,
+  };
+
+  const prayers: PrayerEntry[] = today
+    ? PRAYER_CFG.map(pc => ({
+        ...pc,
+        adhan: today[pc.key as keyof PrayerDay] as string,
+        iqamaTime: iqamaEnabled
+          ? addMinutes(today[pc.key as keyof PrayerDay] as string, (iqamaCfg as Record<string, number>)[pc.key] ?? 0)
+          : today[pc.key as keyof PrayerDay] as string,
       }))
     : [];
 
-  const tomorrowFajr = widget?.tomorrow ? { fajr: widget.tomorrow.fajr } : null;
-  const nextPrayer: NextPrayer | null = today
-    ? getNextPrayer(prayers.map((p) => ({ key: p.key, label: p.label, adhan: p.adhan })), now, tomorrowFajr)
-    : null;
+  const displayState: DisplayState = (now && prayers.length)
+    ? computeState(now, prayers, prayerDurations)
+    : { mode: "NORMAL" };
 
-  const countdown = nextPrayer ? formatCountdown(nextPrayer.secondsUntil) : null;
-  const flashText = flashMessages.length > 0
-    ? flashMessages.map((m) => m.content).join("   ·   ")
-    : null;
+  // Refresh data at mode transitions (prayer just ended → get fresh data)
+  useEffect(() => {
+    if (displayState.mode !== prevMode.current) {
+      if (displayState.mode === "NORMAL" && prevMode.current === "PRAYER_DARK") {
+        refreshRef.current();
+      }
+      prevMode.current = displayState.mode;
+    }
+  }, [displayState.mode]);
 
+  // Show flash screen only when a config-updated SSE event triggers a widget refresh
+  useEffect(() => {
+    if (!pendingFlashRef.current) return;
+    pendingFlashRef.current = false;
+    const flashMsgs = widget?.flashMessages ?? [];
+    if (!flashMsgs.length) return;
+    setShowFlash(true);
+    const t = setTimeout(() => setShowFlash(false), 12_000);
+    return () => clearTimeout(t);
+  }, [widget]);
+
+  const is24h = widget?.mosque.config?.regional?.timeFormat === "24";
+
+  let clockHM = "--:--", ampm = "", secs = "--", hijriEn = "", hijriAr = "", dayLabel = "", gregDate = "";
+  if (now) {
+    if (is24h) {
+      const t  = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+      const parts = t.split(":");
+      clockHM = `${parts[0]}:${parts[1]}`;
+      secs    = parts[2];
+      ampm    = "";
+    } else {
+      const t  = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true });
+      const sp = t.lastIndexOf(" ");
+      ampm     = t.slice(sp + 1);
+      const p  = t.slice(0, sp).split(":");
+      clockHM  = `${p[0]}:${p[1]}`;
+      secs     = p[2];
+    }
+    dayLabel = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+    gregDate = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }).toUpperCase();
+    hijriEn  = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" })
+                   .format(now).replace(" AH", "").toUpperCase();
+    try { hijriAr = new Intl.DateTimeFormat("ar-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" }).format(now); } catch {}
+  }
+
+  const tFajr    = widget?.tomorrow ? { fajr: widget.tomorrow.fajr } : null;
+  const nextPray: NextPrayer | null = (today && now)
+    ? getNextPrayer(prayers.map(p => ({ key: p.key, label: p.label, adhan: p.adhan })), now, tFajr)
+    : null;
+  const nextData  = prayers.find(p => p.key === nextPray?.key);
+  const countdown = nextPray ? formatCountdown(nextPray.secondsUntil) : null;
+  const [cH, cM, cS] = (countdown ?? "00:00:00").split(":");
+
+  // ── Ramadan detection ────────────────────────────────────────────────────────
+  const isRamadan = (() => {
+    if (!now) return false;
+    try {
+      const m = parseInt(new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { month: "numeric" }).format(now));
+      return m === 9;
+    } catch { return false; }
+  })();
+  const isIftarNext = isRamadan && nextPray?.key === "maghrib";
+
+
+  // Detect: past Isha iqamah + duration → day's prayers are done
+  const isPastLastPrayer = (() => {
+    if (!now || displayState.mode !== "NORMAL") return false;
+    const isha = prayers.find(p => p.key === "isha");
+    if (!isha) return false;
+    const ishaEnd = timeToSec(isha.iqamaTime) + (prayerDurations.isha ?? 15) * 60;
+    const nowSec  = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    return ishaEnd > 0 && nowSec >= ishaEnd;
+  })();
+  const weather   = getWeather(wCode);
+  const cityLabel = mosque.city?.toUpperCase()
+    ?? widget?.mosque.timezone?.split("/")[1]?.replace(/_/g, " ").toUpperCase() ?? "";
+  const quoteText = msgs.length > 0 ? msgs.map(m => m.content).join("  ·  ") : DEFAULT_QUOTE;
+  const quoteRef  = msgs.length > 0 ? "" : DEFAULT_REF;
+  const tickerContent  = quoteRef ? `${quoteText}   ${quoteRef}` : quoteText;
+  // single copy enters from right (100vw) and exits left (-100%); duration covers ~100vw + text width
+  const tickerDuration = Math.max(40, Math.round(tickerContent.length * 0.4) + 35);
+
+  // Background from admin config
+  const dispCfg    = widget?.mosque.config?.display as { wallpaper?: string; bgImageUrl?: string; bgColor?: string } | undefined;
+  const bgImageUrl = dispCfg?.bgImageUrl ?? "";
+  const bgColorCfg = dispCfg?.bgColor ?? "";
+  const wallpaper  = dispCfg?.wallpaper ?? "void";
+  const containerBg: React.CSSProperties = bgImageUrl
+    ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)), url(${bgImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+    : bgColorCfg
+      ? { background: bgColorCfg }
+      : { background: WALLPAPER_BG[wallpaper] ?? DARK };
+
+  const isPreAdhan = displayState.mode === "PRE_ADHAN";
+  const accentColor  = isPreAdhan ? AMBER : GREEN;
+  const accentDim    = isPreAdhan ? AMBER_DIM : GREEN_DIM;
+  const preLabelSm: React.CSSProperties = {
+    fontSize: "0.85vw", fontWeight: 700, letterSpacing: "0.22em", color: accentColor,
+  };
+
+  // ── shared styles ─────────────────────────────────────────────────────────────
+  const card: React.CSSProperties = {
+    background: CARD, border: `1px solid ${GOLD_DIM}`, borderRadius: "14px", overflow: "hidden",
+  };
+  const labelSm: React.CSSProperties = { ...preLabelSm };
+  const pill = (bg: string, color: string): React.CSSProperties => ({
+    display: "inline-flex", alignItems: "center", padding: "0.35vh 1.1vw",
+    background: bg, color, borderRadius: "99px", fontSize: "0.95vw", fontWeight: 800,
+    letterSpacing: "0.18em", whiteSpace: "nowrap",
+  });
+
+  // ── Jumu'ah block screen ─────────────────────────────────────────────────────
+  const jumuaCfg = widget?.mosque.config?.jumua;
+
+  // ── Pre-Jumu'ah detection ────────────────────────────────────────────────────
+  const preJumuaTime = (() => {
+    if (!now || now.getDay() !== 5) return null;
+    if (!jumuaCfg?.enabled || !jumuaCfg?.reminder) return null;
+    return validJumuaTime(jumuaCfg.time1) ?? today?.dhuhr ?? null;
+  })();
+  const isPreJumua = (() => {
+    if (!now || !preJumuaTime) return false;
+    const jSec  = timeToSec(preJumuaTime);
+    const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    return jSec > 0 && nowSec >= jSec - PRE_JUMUA_SECS && nowSec < jSec;
+  })();
+  const isJumuahBlocked = (() => {
+    if (!now || !jumuaCfg?.enabled || !jumuaCfg?.blockScreen) return false;
+    if (now.getDay() !== 5) return false; // only Friday (5)
+    const duration = jumuaCfg.duration ?? 45;
+    const nowSec   = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    // blank / "00:00" / midnight all fall back to Dhuhr adhan time
+    const time1 = validJumuaTime(jumuaCfg.time1) ?? today?.dhuhr;
+    return [time1, validJumuaTime(jumuaCfg.time2), validJumuaTime(jumuaCfg.time3)].some(t => {
+      if (!t) return false;
+      const start = timeToSec(t);
+      return start >= 0 && nowSec >= start && nowSec < start + duration * 60;
+    });
+  })();
+
+  // ── fullscreen overlays ───────────────────────────────────────────────────────
+  if (isJumuahBlocked) return <JumuaScreen/>;
+  if (isPreJumua && preJumuaTime) return <PreJumuahScreen jumuaTime={preJumuaTime} is24h={is24h} mosqueName={mosque.name}/>;
+  if (showFlash && msgs.length > 0 && displayState.mode === "NORMAL")
+    return <FlashMessageScreen message={msgs[0].content} total={msgs.length} current={1}/>;
+  if (displayState.mode === "IQAMAH_COUNTDOWN") return <IqamahScreen state={displayState} is24h={is24h}/>;
+  if (displayState.mode === "SILENCE")    return <SilenceScreen  prayer={displayState.prayer}/>;
+  if (displayState.mode === "PRAYER_DARK") return <PrayerDarkScreen prayer={displayState.prayer}/>;
+
+  // ── normal / pre-adhan display ───────────────────────────────────────────────
   return (
-    <div className="starfield relative h-screen w-screen overflow-hidden text-white flex flex-col select-none">
+    <>
+      {/* CSS animations */}
+      <style>{`
+        @keyframes pulse-border {
+          0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.0)}
+          50%{box-shadow:0 0 0 4px rgba(245,158,11,0.6)}
+        }
+        @keyframes blink-badge {
+          0%,100%{opacity:1} 50%{opacity:0.4}
+        }
+        @keyframes ticker-roll {
+          from { transform: translateX(100vw); }
+          to   { transform: translateX(-100%); }
+        }
+        .pre-adhan-card {
+          border: 1px solid ${AMBER} !important;
+          animation: pulse-border 1.8s ease-in-out infinite;
+        }
+        .pre-adhan-badge { animation: blink-badge 1.2s ease-in-out infinite; }
+      `}</style>
 
-      {/* ── Top bar: online · mosque name · temperature ── */}
-      <div className="flex items-center justify-between px-6 pt-5 shrink-0">
-        <div className="flex items-center gap-2 w-32">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-emerald-400 uppercase tracking-widest font-medium">Online</span>
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase text-center flex-1 px-4 leading-tight">
-          {mosque.name}
-        </h1>
-        <div className="text-orange-400 font-bold text-xl w-32 text-right">
-          {temperature !== null ? `${temperature}°C` : "--°C"}
-        </div>
-      </div>
+      <div style={{ ...containerBg, color: WHITE, height: "100%", width: "100%", display: "flex", flexDirection: "column", overflow: "hidden", userSelect: "none" }}>
 
-      {/* ── Middle row: Shuruq | Clock+Hijri | Jumua ── */}
-      <div className="flex items-center justify-between px-8 flex-1 min-h-0">
-
-        {/* Shuruq */}
-        <div className="text-center w-44">
-          <p className="text-base text-gray-400 mb-2 tracking-wide">Shurûq</p>
-          <p className="text-4xl font-bold tabular-nums">{today?.shuruq ?? "--:--"}</p>
-        </div>
-
-        {/* Center: clock + Hijri + countdown */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="bg-purple-900/80 border border-purple-700/50 rounded-2xl px-12 py-6 text-center shadow-2xl shadow-purple-900/60 backdrop-blur-sm">
-            <div className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight">{clockHMS}</div>
-            <div className="text-purple-200 mt-3 text-base tracking-wide">{hijriDate}</div>
+        {/* ═══ HEADER ═══════════════════════════════════════════════════════════ */}
+        <header style={{
+          display: "flex", alignItems: "center", gap: "1.2vw", padding: "1.1vh 1.8vw",
+          borderBottom: `1px solid ${isPreAdhan ? AMBER : GOLD_DIM}`,
+          background: isPreAdhan ? "rgba(245,158,11,0.05)" : "rgba(0,0,0,0.5)",
+          flexShrink: 0, transition: "border-color 0.5s, background 0.5s"
+        }}>
+          <div style={{ width: "5vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.2vw", borderRight: `1px solid ${GOLD_DIM}` }}>
+            {mosque.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={mosque.logoUrl} alt={mosque.name} style={{ width: "4.5vh", height: "4.5vh", objectFit: "contain", borderRadius: "6px" }}/>
+            ) : (
+              <IconMosque size="4.5vh" color={GOLD}/>
+            )}
           </div>
-          {nextPrayer && countdown && (
-            <div className="text-center text-base text-gray-300 tracking-wide">
-              <span className="mr-2">🕌</span>
-              <span className="font-semibold text-white">{nextPrayer.label}</span>
-              <span className="text-gray-400"> in </span>
-              <span className="font-bold text-yellow-300 tabular-nums">{countdown}</span>
-              <span className="ml-2">🕌</span>
+          <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "0.8vw", flexWrap: "wrap" }}>
+              <h1 style={{ margin: 0, fontSize: "3vw", fontWeight: 900, letterSpacing: "0.04em", lineHeight: 1, whiteSpace: "nowrap" }}>
+                {mosque.name.toUpperCase()}
+              </h1>
+              {cityLabel && <span style={{ color: GOLD, fontSize: "1.8vw", fontWeight: 700, letterSpacing: "0.08em", flexShrink: 0 }}>· {cityLabel}</span>}
+            </div>
+            {mosque.associationName && (
+              <div style={{ fontSize: "0.9vw", color: MUTED, letterSpacing: "0.1em", marginTop: "0.2vh", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {mosque.associationName}
+              </div>
+            )}
+          </div>
+          {isPreAdhan && (
+            <div className="pre-adhan-badge" style={{ flexShrink: 0, background: "rgba(245,158,11,0.15)", border: `1px solid ${AMBER}`, borderRadius: "8px", padding: "0.5vh 1.2vw", textAlign: "center" }}>
+              <div style={{ fontSize: "0.8vw", color: AMBER, letterSpacing: "0.15em", fontWeight: 700 }}>ADHAN SOON</div>
+              <div style={{ fontFamily: MONO, fontSize: "1.5vw", color: WHITE, fontWeight: 900 }}>
+                {displayState.prayer?.label.toUpperCase()}
+              </div>
             </div>
           )}
-        </div>
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(255,255,255,0.04)", border: `1px solid ${GOLD_DIM}`, borderRadius: "12px", padding: "0.8vh 1.4vw" }}>
+            <span style={{ fontSize: "3.5vw", lineHeight: 1 }}>{weather.icon}</span>
+            <div>
+              <div style={{ fontFamily: CLOCK, fontSize: "3vw", color: "#fbbf24", lineHeight: 1 }}>
+                {temp !== null ? `${temp}°${tempUnit}` : "--°"}
+              </div>
+              <div style={{ fontSize: "0.8vw", color: GOLD, letterSpacing: "0.12em", marginTop: "0.2vh" }}>{weather.label}</div>
+            </div>
+          </div>
+        </header>
 
-        {/* Jumua */}
-        <div className="text-center w-44">
-          <p className="text-base text-gray-400 mb-2 tracking-wide">Jumua</p>
-          <p className="text-4xl font-bold tabular-nums">{jumua?.time1 ?? "--:--"}</p>
-          {jumua?.jumua2Enabled && jumua.time2 && (
-            <p className="text-2xl font-semibold text-gray-300 tabular-nums mt-1">{jumua.time2}</p>
-          )}
-        </div>
-      </div>
+        {/* ═══ MIDDLE ═══════════════════════════════════════════════════════════ */}
+        <main style={{ display: "flex", flex: 1, minHeight: 0, gap: "1.2vw", padding: "1.2vh 1.5vw" }}>
 
-      {/* ── Prayer columns: Fajr Dhuhr Asr Maghrib Isha ── */}
-      <div className="flex justify-around items-end px-6 pb-6 shrink-0">
-        {prayers.length === 0 ? (
-          <p className="text-gray-500 text-sm py-4">No prayer schedule available</p>
-        ) : (
-          prayers.map(({ key, label, adhan, iqamaTime }) => {
-            const isNext = nextPrayer?.key === key;
+          {/* ── LEFT CARD ────────────────────────────────────────────────────── */}
+          <div className={isPreAdhan ? "pre-adhan-card" : ""} style={{
+            ...card, flex: "0 0 52vw", display: "flex", flexDirection: "column",
+            overflow: "hidden", transition: "border-color 0.5s",
+          }}>
+
+            {/* ── Prayer Name Hero ──────────────────────────────────────────── */}
+            <div style={{
+              position: "relative", overflow: "hidden", flexShrink: 0,
+              padding: "0.8vh 2vw 0.7vh",
+              background: isPreAdhan
+                ? "linear-gradient(135deg,rgba(120,60,0,0.4) 0%,rgba(0,0,0,0) 70%)"
+                : "linear-gradient(135deg,rgba(20,55,25,0.7) 0%,rgba(0,0,0,0) 70%)",
+              borderBottom: `1px solid ${GOLD_DIM}`,
+            }}>
+              <div style={{ position: "absolute", right: "-0.5vw", bottom: "-1.5vh", opacity: 0.06, pointerEvents: "none" }}>
+                <IconCrescent size="11vw" color={GOLD}/>
+              </div>
+              <div style={{ marginBottom: "0.3vh" }}>
+                <span style={pill(
+                  isPastLastPrayer
+                    ? `linear-gradient(90deg,#4b5563,#6b7280)`
+                    : isPreAdhan ? `linear-gradient(90deg,${AMBER},#fbbf24)` : `linear-gradient(90deg,${GOLD},#e8c860)`,
+                  isPastLastPrayer ? WHITE : DARK
+                )}>
+                  {isPastLastPrayer ? "DAY PRAYER TIMES" : isPreAdhan ? "⚡ ADHAN APPROACHING" : "NEXT PRAYER"}
+                </span>
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: "5vw", fontWeight: 900, lineHeight: 0.9, letterSpacing: "0.02em", color: isPastLastPrayer ? MUTED : WHITE }}>
+                {isPastLastPrayer ? "ISHA" : nextPray ? nextPray.label.toUpperCase() : "——"}
+              </div>
+              <div style={{
+                height: "3px", width: "4vw", borderRadius: "2px", marginTop: "0.5vh",
+                background: `linear-gradient(90deg,${isPreAdhan ? AMBER : GOLD},transparent)`,
+              }}/>
+            </div>
+
+            {/* ── Times + Countdown ─────────────────────────────────────────── */}
+            {(() => {
+              const af = fmtTime(nextData?.adhan, is24h);
+              const qf = fmtTime(nextData?.iqamaTime, is24h);
+              return (
+                <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+
+                  {/* LEFT — ADHAN + IQAMAH */}
+                  <div style={{
+                    width: "44%", flexShrink: 0,
+                    padding: "0.8vh 1vw",
+                    display: "flex", flexDirection: "column",
+                    gap: "0.4vh",
+                    borderRight: `1px solid ${GOLD_LINE}`,
+                  }}>
+                    {/* ADHAN slot — flex:1 fills half the height */}
+                    <div style={{
+                      flex: 1,
+                      background: "rgba(234,179,8,0.07)",
+                      border: `1px solid rgba(234,179,8,0.25)`,
+                      borderRadius: "10px", overflow: "hidden",
+                      display: "flex", alignItems: "stretch",
+                    }}>
+                      <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: GOLD, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>ADHAN</div>
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
+                        <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{af.hm}</div>
+                        {af.ampm && <div style={{ fontSize: "2vw", color: GOLD, fontWeight: 700 }}>{af.ampm}</div>}
+                      </div>
+                    </div>
+
+                    {iqamaEnabled && (
+                      <>
+                        {/* Connector */}
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", opacity: 0.35, height: "1.4vh" }}>
+                          <span style={{ fontSize: "0.8vw", color: GOLD }}>↓</span>
+                        </div>
+                        {/* IQAMAH slot */}
+                        <div style={{
+                          flex: 1,
+                          background: "rgba(34,197,94,0.07)",
+                          border: `1px solid rgba(34,197,94,0.25)`,
+                          borderRadius: "10px", overflow: "hidden",
+                          display: "flex", alignItems: "stretch",
+                        }}>
+                          <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: GREEN, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>IQAMAH</div>
+                          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
+                            <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{qf.hm}</div>
+                            {qf.ampm && <div style={{ fontSize: "2vw", color: MUTED, fontWeight: 700 }}>{qf.ampm}</div>}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* RIGHT — Countdown hero */}
+                  <div style={{
+                    flex: 1, position: "relative", overflow: "hidden",
+                    display: "flex", flexDirection: "column",
+                    justifyContent: "center", alignItems: "center",
+                    gap: "1vh",
+                  }}>
+                    {/* Subtle radial glow — less heavy than a flat tint */}
+                    <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 55%, rgba(239,68,68,0.13) 0%, transparent 72%)", pointerEvents: "none" }}/>
+                    <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8vh" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.6vw" }}>
+                        <IconClock size="1.6vw" color={isIftarNext ? ORANGE : RED}/>
+                        <span style={{ fontSize: "1.2vw", letterSpacing: "0.38em", fontWeight: 800, color: isIftarNext ? ORANGE : RED }}>
+                          {isIftarNext ? "TIME TO IFTAR" : "TIME TO ADHAN"}
+                        </span>
+                      </div>
+                      {isIftarNext && (
+                        <div style={{ fontSize: "0.75vw", color: TEAL, letterSpacing: "0.3em", fontWeight: 700, opacity: 0.9 }}>RAMADAN MUBARAK</div>
+                      )}
+                      <div style={{ display: "flex", alignItems: "flex-end" }}>
+                        {[{ v: cH, l: "HRS" }, { v: cM, l: "MINS" }, { v: cS, l: "SECS" }].map(({ v, l }, i) => (
+                          <div key={l} style={{ display: "flex", alignItems: "flex-end" }}>
+                            {i > 0 && (
+                              <span style={{ fontFamily: CLOCK, color: isIftarNext ? ORANGE : RED, fontSize: "9vw", lineHeight: 1, paddingBottom: "1.8vh", opacity: 0.5 }}>:</span>
+                            )}
+                            <div style={{ textAlign: "center", padding: "0 0.4vw" }}>
+                              <div style={{ fontFamily: CLOCK, fontSize: "9vw", color: isIftarNext ? ORANGE : RED, lineHeight: 1 }}>{v}</div>
+                              <div style={{ fontSize: "1vw", color: GOLD, letterSpacing: "0.22em", marginTop: "0.5vh" }}>{l}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ width: "60%", height: "1px", background: `linear-gradient(90deg,transparent,${isIftarNext ? ORANGE : RED}44,transparent)` }}/>
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* ── RIGHT PANEL: live clock ─────────────────────────────────────── */}
+          <div style={{ ...card, flex: 1, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(150deg,#080a05 0%,#16200a 40%,#26300f 65%,#0c0a03 100%)" }}/>
+            <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 40%,rgba(180,130,20,0.22) 0%,transparent 65%)" }}/>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", color: GOLD, opacity: 0.08, pointerEvents: "none" }}>
+              <IconMosque size="22vw" color={GOLD}/>
+            </div>
+            <div style={{ position: "relative", zIndex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "1.2vh 2.5vw", gap: "1.2vh" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.1vh" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.8vw" }}>
+                  <div style={{ fontSize: "0.75vw", fontWeight: 700, letterSpacing: "0.45em", color: GOLD, opacity: 0.7 }}>TODAY</div>
+                  {isRamadan && (
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: "0.3vw", background: TEAL_DIM, border: `1px solid ${TEAL}44`, borderRadius: "99px", padding: "0.1vh 0.6vw" }}>
+                      <IconCrescent size="0.8vw" color={TEAL}/>
+                      <span style={{ fontSize: "0.65vw", fontWeight: 800, letterSpacing: "0.2em", color: TEAL }}>RAMADAN</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: "2.4vw", fontWeight: 900, letterSpacing: "0.06em", lineHeight: 1 }}>{dayLabel || "CURRENT TIME"}</div>
+                <div style={{ fontSize: "1.05vw", color: MUTED, fontWeight: 600, letterSpacing: "0.12em", marginTop: "0.15vh" }}>{gregDate}</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: "0.4vw" }}>
+                <div style={{ fontFamily: CLOCK, fontSize: "12vw", lineHeight: 0.85, letterSpacing: "0.06em" }}>{clockHM}</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: "0.8vh", gap: "0.5vh" }}>
+                  <div style={{ fontFamily: CLOCK, fontSize: "3.5vw", color: GREEN, letterSpacing: "0.04em", lineHeight: 1 }}>:{secs}</div>
+                  {ampm && <div style={{ background: "rgba(34,197,94,0.18)", border: "1px solid rgba(34,197,94,0.4)", borderRadius: "6px", color: GREEN, fontSize: "1.2vw", fontWeight: 800, padding: "0.15vh 0.5vw", textAlign: "center", lineHeight: 1.3 }}>{ampm}</div>}
+                </div>
+              </div>
+              <div style={{ height: "2px", background: `linear-gradient(90deg,${GOLD_LINE},transparent)` }}/>
+              {/* Hijri dates on same row */}
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1vw" }}>
+                <div style={{ fontSize: "1.3vw", letterSpacing: "0.1em", color: MUTED, fontWeight: 600 }}>{hijriEn}</div>
+                {hijriAr && <div style={{ fontSize: "1.6vw", direction: "rtl", color: WHITE, fontWeight: 600 }}>{hijriAr}</div>}
+              </div>
+              {/* Bottom info row — Ramadan: Suhoor + Iftar; Friday: Sunrise + Jumu'ah; else: Sunrise */}
+              <div style={{ display: "flex", gap: "0.8vw" }}>
+                {isRamadan ? (
+                  /* ── Ramadan row: SUHOOR (left) + IFTAR (right) ── */
+                  <>
+                    {today?.fajr && (() => {
+                      const sf = fmtTime(today.fajr, is24h);
+                      return (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: TEAL_DIM, border: `1px solid ${TEAL}33`, borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                          <IconMoon size="2vw" color={TEAL}/>
+                          <div>
+                            <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: TEAL }}>SUHOOR ENDS</div>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                              <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{sf.hm}</span>
+                              {sf.ampm && <span style={{ fontSize: "1.2vw", color: TEAL, fontWeight: 700 }}>{sf.ampm}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    {today?.maghrib && (() => {
+                      const mf = fmtTime(today.maghrib, is24h);
+                      return (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(249,115,22,0.08)", border: `1px solid rgba(249,115,22,0.25)`, borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                          <IconSun size="2vw" color={ORANGE}/>
+                          <div>
+                            <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: ORANGE }}>IFTAR</div>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                              <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{mf.hm}</span>
+                              {mf.ampm && <span style={{ fontSize: "1.2vw", color: ORANGE, fontWeight: 700 }}>{mf.ampm}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  /* ── Normal row: Sunrise (left) + Jumu'ah on Fridays (right) ── */
+                  <>
+                    {today?.shuruq && (() => {
+                      const sf = fmtTime(today.shuruq, is24h);
+                      return (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(251,191,36,0.07)", border: `1px solid rgba(251,191,36,0.18)`, borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                          <IconSun size="2vw" color="#fbbf24"/>
+                          <div>
+                            <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: "#fbbf24" }}>SUNRISE</div>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                              <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{sf.hm}</span>
+                              {sf.ampm && <span style={{ fontSize: "1.2vw", color: "#fbbf24", fontWeight: 700 }}>{sf.ampm}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    {jumuaCfg?.enabled && now?.getDay() === 5 && (() => {
+                      const jumuaTime = validJumuaTime(jumuaCfg.time1) ?? today?.dhuhr;
+                      if (!jumuaTime) return null;
+                      const jf = fmtTime(jumuaTime, is24h);
+                      return (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(34,197,94,0.07)", border: `1px solid rgba(34,197,94,0.18)`, borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                          <IconCrescent size="2vw" color={GREEN}/>
+                          <div>
+                            <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: GREEN }}>JUMU&apos;AH</div>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                              <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{jf.hm}</span>
+                              {jf.ampm && <span style={{ fontSize: "1.2vw", color: GREEN, fontWeight: 700 }}>{jf.ampm}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* ═══ PRAYER BAR ═══════════════════════════════════════════════════════ */}
+        <section style={{ display: "flex", gap: "1vw", padding: "0 1.5vw 1.1vh", flexShrink: 0 }}>
+          {prayers.map((p) => {
+            const isNext = nextPray?.key === p.key;
+            const af = fmtTime(p.adhan, is24h);
+            const qf = fmtTime(p.iqamaTime, is24h);
             return (
-              <div
-                key={key}
-                className={`flex flex-col items-center rounded-xl px-6 py-4 min-w-[110px] transition-all duration-500 ${
-                  isNext
-                    ? "bg-purple-900/90 border border-purple-600/60 shadow-lg shadow-purple-900/50"
-                    : "bg-transparent"
-                }`}
-              >
-                <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">{label}</p>
-                <p className="text-2xl font-bold tabular-nums">{adhan}</p>
-                <p className="text-base text-gray-300 tabular-nums mt-1">{iqamaTime}</p>
+              <div key={p.key} className={isPreAdhan && isNext ? "pre-adhan-card" : ""} style={{
+                ...card, flex: 1, padding: "0.8vh 0.7vw", position: "relative",
+                display: "flex", flexDirection: "column", justifyContent: "space-between",
+                border: isNext ? `1px solid ${isPreAdhan ? AMBER : GOLD}` : `1px solid ${GOLD_DIM}`,
+                background: isNext ? (isPreAdhan ? "rgba(245,158,11,0.1)" : "rgba(200,168,74,0.06)") : CARD,
+                transition: "border-color 0.5s, background 0.5s",
+              }}>
+                {/* Prayer name + icon + NEXT badge */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4vw" }}>
+                    {p.isDark ? <IconMoon size="1.6vw" color={p.color}/> : <IconSun size="1.6vw" color={p.color}/>}
+                    <div style={{ fontSize: "1.3vw", fontWeight: 900, letterSpacing: "0.08em", color: WHITE }}>{p.label}</div>
+                  </div>
+                  {isNext && (
+                    <span style={{ ...pill(isPreAdhan ? `rgba(245,158,11,0.25)` : `rgba(34,197,94,0.2)`, isPreAdhan ? AMBER : GREEN), fontSize: "0.75vw", padding: "0.2vh 0.7vw" }}>
+                      {isPreAdhan ? "⚡ SOON" : "▶ NEXT"}
+                    </span>
+                  )}
+                </div>
+                {/* Thin divider */}
+                <div style={{ height: "1px", background: `linear-gradient(90deg,${GOLD_DIM},transparent)`, margin: "0.3vh 0" }}/>
+                {/* Times */}
+                <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
+                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${GOLD_DIM}` }}>
+                    <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: GREEN, marginBottom: "0.15vh" }}>ADHAN</div>
+                    <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1, color: WHITE }}>{af.hm}</div>
+                    <div style={{ fontSize: "0.88vw", color: GOLD, fontWeight: 700, marginTop: "0.15vh" }}>{af.ampm}</div>
+                  </div>
+                  {iqamaEnabled && (
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: GOLD, marginBottom: "0.15vh" }}>IQAMAH</div>
+                      <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1, color: WHITE }}>{qf.hm}</div>
+                      <div style={{ fontSize: "0.88vw", color: MUTED, fontWeight: 700, marginTop: "0.15vh" }}>{qf.ampm}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </section>
 
-      {/* ── Flash message ticker ── */}
-      {flashText && (
-        <div className="bg-black/50 border-t border-white/10 h-9 overflow-hidden shrink-0 flex items-center">
-          <span className="marquee text-sm text-gray-300 px-4 whitespace-nowrap">
-            {flashText}
-          </span>
-        </div>
-      )}
-    </div>
+        {/* ═══ FOOTER ═══════════════════════════════════════════════════════════ */}
+        <footer style={{ display: "flex", alignItems: "stretch", height: "9vh", borderTop: `1px solid ${GOLD_DIM}`, background: "rgba(0,0,0,0.65)", flexShrink: 0, overflow: "hidden" }}>
+
+          {/* LEFT — QR code */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderRight: `1px solid ${GOLD_DIM}` }}>
+            {displayUrl
+              ? <QRCodeSVG value={displayUrl} size={52} bgColor="transparent" fgColor={GOLD} level="M"/>
+              : <div style={{ width: 52, height: 52, background: GOLD_DIM, borderRadius: 4 }}/>
+            }
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.1vh" }}>
+              <div style={{ fontSize: "0.65vw", fontWeight: 800, letterSpacing: "0.28em", color: GOLD, lineHeight: 1.2 }}>SCAN</div>
+              <div style={{ fontSize: "0.6vw", color: MUTED, letterSpacing: "0.14em", lineHeight: 1.2 }}>TO VIEW</div>
+            </div>
+          </div>
+
+          {/* CENTER — scrolling ticker: enters from right (logo side), exits left (QR side) */}
+          <div style={{ flex: 1, overflow: "hidden", position: "relative", display: "flex", alignItems: "center" }}>
+            <span style={{ position: "absolute", whiteSpace: "nowrap", fontSize: "2.4vw", fontWeight: 800, color: WHITE, animation: `ticker-roll ${tickerDuration}s linear infinite` }}>
+              {tickerContent}
+            </span>
+          </div>
+
+          {/* RIGHT — app logo */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderLeft: `1px solid ${GOLD_DIM}` }}>
+            <IconCrescent size="4vh" color={GOLD}/>
+            <div>
+              <div style={{ fontFamily: MONO, fontSize: "1.3vw", fontWeight: 900, color: GOLD, letterSpacing: "0.06em", lineHeight: 1 }}>MAWAQIT</div>
+              <div style={{ fontSize: "0.6vw", color: MUTED, letterSpacing: "0.2em", lineHeight: 1.4 }}>PRAYER DISPLAY</div>
+            </div>
+          </div>
+
+        </footer>
+
+      </div>
+    </>
   );
 }
