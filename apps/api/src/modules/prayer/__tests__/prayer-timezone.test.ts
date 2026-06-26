@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-// The helper doesn't exist yet — this import will fail until Step 1.3
 import { getMosqueLocalDate } from "../prayer.service.js";
 
 afterEach(() => {
