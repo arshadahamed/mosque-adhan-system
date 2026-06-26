@@ -9,8 +9,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
 
-  const [hydrated,   setHydrated]   = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [hydrated,      setHydrated]      = useState(false);
+  const [refreshing,    setRefreshing]    = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const attempted = useRef(false);
 
   // Step 1: mark hydrated after first render so we can read sessionStorage state
@@ -31,6 +32,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         })
         .catch(() => {
           clear();
+          setRefreshFailed(true);
         })
         .finally(() => {
           setRefreshing(false);
@@ -38,12 +40,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [hydrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Step 3: redirect to login once we know there's no valid session
+  // Step 3: redirect to login once we know there's no valid session.
+  // Guard: only redirect if no refresh was ever attempted OR the refresh definitively failed.
+  // This prevents a React 18 batch-update race where setRefreshing(false) fires before
+  // setAuth has settled, causing a spurious redirect despite a successful token refresh.
   useEffect(() => {
-    if (hydrated && !refreshing && !user) {
+    if (hydrated && !refreshing && !user && (!attempted.current || refreshFailed)) {
       router.replace(`/login?from=${encodeURIComponent(pathname)}`);
     }
-  }, [hydrated, refreshing, user, router, pathname]);
+  }, [hydrated, refreshing, user, refreshFailed, router, pathname]);
 
   // Show nothing while hydrating or refreshing to avoid flash of empty content
   if (!hydrated || refreshing || !user || !accessToken) return null;

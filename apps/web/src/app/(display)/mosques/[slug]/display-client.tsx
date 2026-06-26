@@ -649,6 +649,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
   } | undefined;
 
   const bgImageUrl       = dispCfg?.bgImageUrl ?? "";
+  const safeBgImageUrl   = /^https?:\/\//.test(bgImageUrl) ? bgImageUrl : "";
   const bgColorCfg       = dispCfg?.bgColor ?? "";
   const wallpaper        = dispCfg?.wallpaper ?? "void";
 
@@ -660,8 +661,8 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
   const showBlackScreen  = dispCfg?.blackScreen  !== false;
   const showHijriDate    = dispCfg?.hijriDate    !== false;
   const showTemperature  = dispCfg?.temperature  !== false;
-  const containerBg: React.CSSProperties = bgImageUrl
-    ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)), url(${bgImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+  const containerBg: React.CSSProperties = safeBgImageUrl
+    ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)), url(${safeBgImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
     : bgColorCfg
       ? { background: bgColorCfg }
       : { background: WALLPAPER_BG[wallpaper] ?? DARK };
