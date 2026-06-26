@@ -119,6 +119,13 @@ const WALLPAPER_BG: Record<string, string> = {
   "night":       "linear-gradient(135deg,#050510,#0a0a1a)",
 };
 
+const THEME_COLORS: Record<string, { gold: string; green: string; card: string }> = {
+  default: { gold: "#c8a84a", green: "#22c55e", card: "rgba(9,18,13,0.97)"  },
+  dark:    { gold: "#9ca3af", green: "#6b7280", card: "rgba(5,5,5,0.98)"    },
+  minimal: { gold: "#94a3b8", green: "#38bdf8", card: "rgba(8,12,18,0.97)"  },
+  classic: { gold: "#d4a017", green: "#16a34a", card: "rgba(10,15,8,0.97)"  },
+};
+
 const DEFAULT_QUOTE = "Indeed, prayer has been decreed upon the believers a decree of specified times.";
 const DEFAULT_REF   = "— An-Nisa 4:103";
 
@@ -659,16 +666,24 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
       ? { background: bgColorCfg }
       : { background: WALLPAPER_BG[wallpaper] ?? DARK };
 
+  const activeTheme  = THEME_COLORS[dispCfg?.theme ?? "default"] ?? THEME_COLORS.default;
+  const tGOLD        = activeTheme.gold;
+  const tGREEN       = activeTheme.green;
+  const tCARD        = activeTheme.card;
+  const tGOLD_DIM  = `rgba(${parseInt(tGOLD.slice(1,3),16)},${parseInt(tGOLD.slice(3,5),16)},${parseInt(tGOLD.slice(5,7),16)},0.22)`;
+  const tGOLD_LINE = `rgba(${parseInt(tGOLD.slice(1,3),16)},${parseInt(tGOLD.slice(3,5),16)},${parseInt(tGOLD.slice(5,7),16)},0.45)`;
+  const tGREEN_DIM = `rgba(${parseInt(tGREEN.slice(1,3),16)},${parseInt(tGREEN.slice(3,5),16)},${parseInt(tGREEN.slice(5,7),16)},0.15)`;
+
   const isPreAdhan = displayState.mode === "PRE_ADHAN";
-  const accentColor  = isPreAdhan ? AMBER : GREEN;
-  const accentDim    = isPreAdhan ? AMBER_DIM : GREEN_DIM;
+  const accentColor  = isPreAdhan ? AMBER : tGREEN;
+  const accentDim    = isPreAdhan ? AMBER_DIM : tGREEN_DIM;
   const preLabelSm: React.CSSProperties = {
     fontSize: "0.85vw", fontWeight: 700, letterSpacing: "0.22em", color: accentColor,
   };
 
   // ── shared styles ─────────────────────────────────────────────────────────────
   const card: React.CSSProperties = {
-    background: CARD, border: `1px solid ${GOLD_DIM}`, borderRadius: "14px", overflow: "hidden",
+    background: tCARD, border: `1px solid ${tGOLD_DIM}`, borderRadius: "14px", overflow: "hidden",
   };
   const labelSm: React.CSSProperties = { ...preLabelSm };
   const pill = (bg: string, color: string): React.CSSProperties => ({
@@ -743,16 +758,16 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
         {/* ═══ HEADER ═══════════════════════════════════════════════════════════ */}
         <header style={{
           display: "flex", alignItems: "center", gap: "1.2vw", padding: "1.1vh 1.8vw",
-          borderBottom: `1px solid ${isPreAdhan ? AMBER : GOLD_DIM}`,
+          borderBottom: `1px solid ${isPreAdhan ? AMBER : tGOLD_DIM}`,
           background: isPreAdhan ? "rgba(245,158,11,0.05)" : "rgba(0,0,0,0.5)",
           flexShrink: 0, transition: "border-color 0.5s, background 0.5s"
         }}>
-          <div style={{ width: "5vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.2vw", borderRight: `1px solid ${GOLD_DIM}` }}>
+          <div style={{ width: "5vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.2vw", borderRight: `1px solid ${tGOLD_DIM}` }}>
             {showLogo && mosque.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={mosque.logoUrl} alt={mosque.name} style={{ width: "4.5vh", height: "4.5vh", objectFit: "contain", borderRadius: "6px" }}/>
             ) : (
-              <IconMosque size="4.5vh" color={GOLD}/>
+              <IconMosque size="4.5vh" color={tGOLD}/>
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
@@ -760,7 +775,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               <h1 style={{ margin: 0, fontSize: "3vw", fontWeight: 900, letterSpacing: "0.04em", lineHeight: 1, whiteSpace: "nowrap" }}>
                 {mosque.name.toUpperCase()}
               </h1>
-              {showCityName && cityLabel && <span style={{ color: GOLD, fontSize: "1.8vw", fontWeight: 700, letterSpacing: "0.08em", flexShrink: 0 }}>· {cityLabel}</span>}
+              {showCityName && cityLabel && <span style={{ color: tGOLD, fontSize: "1.8vw", fontWeight: 700, letterSpacing: "0.08em", flexShrink: 0 }}>· {cityLabel}</span>}
             </div>
             {mosque.associationName && (
               <div style={{ fontSize: "0.9vw", color: MUTED, letterSpacing: "0.1em", marginTop: "0.2vh", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -777,13 +792,13 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
             </div>
           )}
           {showTemperature && (
-            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(255,255,255,0.04)", border: `1px solid ${GOLD_DIM}`, borderRadius: "12px", padding: "0.8vh 1.4vw" }}>
+            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(255,255,255,0.04)", border: `1px solid ${tGOLD_DIM}`, borderRadius: "12px", padding: "0.8vh 1.4vw" }}>
               <span style={{ fontSize: "3.5vw", lineHeight: 1 }}>{weather.icon}</span>
               <div>
                 <div style={{ fontFamily: CLOCK, fontSize: "3vw", color: "#fbbf24", lineHeight: 1 }}>
                   {temp !== null ? `${temp}°${tempUnit}` : "--°"}
                 </div>
-                <div style={{ fontSize: "0.8vw", color: GOLD, letterSpacing: "0.12em", marginTop: "0.2vh" }}>{weather.label}</div>
+                <div style={{ fontSize: "0.8vw", color: tGOLD, letterSpacing: "0.12em", marginTop: "0.2vh" }}>{weather.label}</div>
               </div>
             </div>
           )}
@@ -805,16 +820,16 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               background: isPreAdhan
                 ? "linear-gradient(135deg,rgba(120,60,0,0.4) 0%,rgba(0,0,0,0) 70%)"
                 : "linear-gradient(135deg,rgba(20,55,25,0.7) 0%,rgba(0,0,0,0) 70%)",
-              borderBottom: `1px solid ${GOLD_DIM}`,
+              borderBottom: `1px solid ${tGOLD_DIM}`,
             }}>
               <div style={{ position: "absolute", right: "-0.5vw", bottom: "-1.5vh", opacity: 0.06, pointerEvents: "none" }}>
-                <IconCrescent size="11vw" color={GOLD}/>
+                <IconCrescent size="11vw" color={tGOLD}/>
               </div>
               <div style={{ marginBottom: "0.3vh" }}>
                 <span style={pill(
                   isPastLastPrayer
                     ? `linear-gradient(90deg,#4b5563,#6b7280)`
-                    : isPreAdhan ? `linear-gradient(90deg,${AMBER},#fbbf24)` : `linear-gradient(90deg,${GOLD},#e8c860)`,
+                    : isPreAdhan ? `linear-gradient(90deg,${AMBER},#fbbf24)` : `linear-gradient(90deg,${tGOLD},#e8c860)`,
                   isPastLastPrayer ? WHITE : DARK
                 )}>
                   {isPastLastPrayer ? "DAY PRAYER TIMES" : isPreAdhan ? "⚡ ADHAN APPROACHING" : "NEXT PRAYER"}
@@ -825,7 +840,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               </div>
               <div style={{
                 height: "3px", width: "4vw", borderRadius: "2px", marginTop: "0.5vh",
-                background: `linear-gradient(90deg,${isPreAdhan ? AMBER : GOLD},transparent)`,
+                background: `linear-gradient(90deg,${isPreAdhan ? AMBER : tGOLD},transparent)`,
               }}/>
             </div>
 
@@ -842,7 +857,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                     padding: "0.8vh 1vw",
                     display: "flex", flexDirection: "column",
                     gap: "0.4vh",
-                    borderRight: `1px solid ${GOLD_LINE}`,
+                    borderRight: `1px solid ${tGOLD_LINE}`,
                   }}>
                     {/* ADHAN slot — flex:1 fills half the height */}
                     <div style={{
@@ -852,10 +867,10 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                       borderRadius: "10px", overflow: "hidden",
                       display: "flex", alignItems: "stretch",
                     }}>
-                      <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: GOLD, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>ADHAN</div>
+                      <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGOLD, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>ADHAN</div>
                       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
                         <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{af.hm}</div>
-                        {af.ampm && <div style={{ fontSize: "2vw", color: GOLD, fontWeight: 700 }}>{af.ampm}</div>}
+                        {af.ampm && <div style={{ fontSize: "2vw", color: tGOLD, fontWeight: 700 }}>{af.ampm}</div>}
                       </div>
                     </div>
 
@@ -863,7 +878,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                       <>
                         {/* Connector */}
                         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", opacity: 0.35, height: "1.4vh" }}>
-                          <span style={{ fontSize: "0.8vw", color: GOLD }}>↓</span>
+                          <span style={{ fontSize: "0.8vw", color: tGOLD }}>↓</span>
                         </div>
                         {/* IQAMAH slot */}
                         <div style={{
@@ -873,7 +888,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                           borderRadius: "10px", overflow: "hidden",
                           display: "flex", alignItems: "stretch",
                         }}>
-                          <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: GREEN, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>IQAMAH</div>
+                          <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGREEN, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>IQAMAH</div>
                           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
                             <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{qf.hm}</div>
                             {qf.ampm && <div style={{ fontSize: "2vw", color: MUTED, fontWeight: 700 }}>{qf.ampm}</div>}
@@ -910,7 +925,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                             )}
                             <div style={{ textAlign: "center", padding: "0 0.4vw" }}>
                               <div style={{ fontFamily: CLOCK, fontSize: "9vw", color: isIftarNext ? ORANGE : RED, lineHeight: 1 }}>{v}</div>
-                              <div style={{ fontSize: "1vw", color: GOLD, letterSpacing: "0.22em", marginTop: "0.5vh" }}>{l}</div>
+                              <div style={{ fontSize: "1vw", color: tGOLD, letterSpacing: "0.22em", marginTop: "0.5vh" }}>{l}</div>
                             </div>
                           </div>
                         ))}
@@ -928,13 +943,13 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
           <div style={{ ...card, flex: 1, position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(150deg,#080a05 0%,#16200a 40%,#26300f 65%,#0c0a03 100%)" }}/>
             <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 40%,rgba(180,130,20,0.22) 0%,transparent 65%)" }}/>
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", color: GOLD, opacity: 0.08, pointerEvents: "none" }}>
-              <IconMosque size="22vw" color={GOLD}/>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", color: tGOLD, opacity: 0.08, pointerEvents: "none" }}>
+              <IconMosque size="22vw" color={tGOLD}/>
             </div>
             <div style={{ position: "relative", zIndex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "1.2vh 2.5vw", gap: "1.2vh" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.1vh" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.8vw" }}>
-                  <div style={{ fontSize: "0.75vw", fontWeight: 700, letterSpacing: "0.45em", color: GOLD, opacity: 0.7 }}>TODAY</div>
+                  <div style={{ fontSize: "0.75vw", fontWeight: 700, letterSpacing: "0.45em", color: tGOLD, opacity: 0.7 }}>TODAY</div>
                   {isRamadan && (
                     <div style={{ display: "inline-flex", alignItems: "center", gap: "0.3vw", background: TEAL_DIM, border: `1px solid ${TEAL}44`, borderRadius: "99px", padding: "0.1vh 0.6vw" }}>
                       <IconCrescent size="0.8vw" color={TEAL}/>
@@ -948,11 +963,11 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               <div style={{ display: "flex", alignItems: "flex-end", gap: "0.4vw" }}>
                 <div style={{ fontFamily: CLOCK, fontSize: "12vw", lineHeight: 0.85, letterSpacing: "0.06em" }}>{clockHM}</div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: "0.8vh", gap: "0.5vh" }}>
-                  <div style={{ fontFamily: CLOCK, fontSize: "3.5vw", color: GREEN, letterSpacing: "0.04em", lineHeight: 1 }}>:{secs}</div>
-                  {ampm && <div style={{ background: "rgba(34,197,94,0.18)", border: "1px solid rgba(34,197,94,0.4)", borderRadius: "6px", color: GREEN, fontSize: "1.2vw", fontWeight: 800, padding: "0.15vh 0.5vw", textAlign: "center", lineHeight: 1.3 }}>{ampm}</div>}
+                  <div style={{ fontFamily: CLOCK, fontSize: "3.5vw", color: tGREEN, letterSpacing: "0.04em", lineHeight: 1 }}>:{secs}</div>
+                  {ampm && <div style={{ background: tGREEN_DIM, border: `1px solid ${tGOLD_DIM}`, borderRadius: "6px", color: tGREEN, fontSize: "1.2vw", fontWeight: 800, padding: "0.15vh 0.5vw", textAlign: "center", lineHeight: 1.3 }}>{ampm}</div>}
                 </div>
               </div>
-              <div style={{ height: "2px", background: `linear-gradient(90deg,${GOLD_LINE},transparent)` }}/>
+              <div style={{ height: "2px", background: `linear-gradient(90deg,${tGOLD_LINE},transparent)` }}/>
               {/* Hijri dates on same row */}
               {showHijriDate && (
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1vw" }}>
@@ -1019,13 +1034,13 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                       if (!jumuaTime) return null;
                       const jf = fmtTime(jumuaTime, is24h);
                       return (
-                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(34,197,94,0.07)", border: `1px solid rgba(34,197,94,0.18)`, borderRadius: "8px", padding: "0.6vh 1vw" }}>
-                          <IconCrescent size="2vw" color={GREEN}/>
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: tGREEN_DIM, border: `1px solid ${tGOLD_DIM}`, borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                          <IconCrescent size="2vw" color={tGREEN}/>
                           <div>
-                            <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: GREEN }}>JUMU&apos;AH</div>
+                            <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: tGREEN }}>JUMU&apos;AH</div>
                             <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
                               <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{jf.hm}</span>
-                              {jf.ampm && <span style={{ fontSize: "1.2vw", color: GREEN, fontWeight: 700 }}>{jf.ampm}</span>}
+                              {jf.ampm && <span style={{ fontSize: "1.2vw", color: tGREEN, fontWeight: 700 }}>{jf.ampm}</span>}
                             </div>
                           </div>
                         </div>
@@ -1048,8 +1063,8 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               <div key={p.key} className={isPreAdhan && isNext ? "pre-adhan-card" : ""} style={{
                 ...card, flex: 1, padding: "0.8vh 0.7vw", position: "relative",
                 display: "flex", flexDirection: "column", justifyContent: "space-between",
-                border: isNext ? `1px solid ${isPreAdhan ? AMBER : GOLD}` : `1px solid ${GOLD_DIM}`,
-                background: isNext ? (isPreAdhan ? "rgba(245,158,11,0.1)" : "rgba(200,168,74,0.06)") : CARD,
+                border: isNext ? `1px solid ${isPreAdhan ? AMBER : tGOLD}` : `1px solid ${tGOLD_DIM}`,
+                background: isNext ? (isPreAdhan ? "rgba(245,158,11,0.1)" : "rgba(200,168,74,0.06)") : tCARD,
                 transition: "border-color 0.5s, background 0.5s",
               }}>
                 {/* Prayer name + icon + NEXT badge */}
@@ -1059,23 +1074,23 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                     <div style={{ fontSize: "1.3vw", fontWeight: 900, letterSpacing: "0.08em", color: WHITE }}>{p.label}</div>
                   </div>
                   {isNext && (
-                    <span style={{ ...pill(isPreAdhan ? `rgba(245,158,11,0.25)` : `rgba(34,197,94,0.2)`, isPreAdhan ? AMBER : GREEN), fontSize: "0.75vw", padding: "0.2vh 0.7vw" }}>
+                    <span style={{ ...pill(isPreAdhan ? `rgba(245,158,11,0.25)` : tGREEN_DIM, isPreAdhan ? AMBER : tGREEN), fontSize: "0.75vw", padding: "0.2vh 0.7vw" }}>
                       {isPreAdhan ? "⚡ SOON" : "▶ NEXT"}
                     </span>
                   )}
                 </div>
                 {/* Thin divider */}
-                <div style={{ height: "1px", background: `linear-gradient(90deg,${GOLD_DIM},transparent)`, margin: "0.3vh 0" }}/>
+                <div style={{ height: "1px", background: `linear-gradient(90deg,${tGOLD_DIM},transparent)`, margin: "0.3vh 0" }}/>
                 {/* Times */}
                 <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
-                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${GOLD_DIM}` }}>
-                    <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: GREEN, marginBottom: "0.15vh" }}>ADHAN</div>
+                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${tGOLD_DIM}` }}>
+                    <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: tGREEN, marginBottom: "0.15vh" }}>ADHAN</div>
                     <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1, color: WHITE }}>{af.hm}</div>
-                    <div style={{ fontSize: "0.88vw", color: GOLD, fontWeight: 700, marginTop: "0.15vh" }}>{af.ampm}</div>
+                    <div style={{ fontSize: "0.88vw", color: tGOLD, fontWeight: 700, marginTop: "0.15vh" }}>{af.ampm}</div>
                   </div>
                   {iqamaEnabled && (
                     <div style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: GOLD, marginBottom: "0.15vh" }}>IQAMAH</div>
+                      <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: tGOLD, marginBottom: "0.15vh" }}>IQAMAH</div>
                       <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1, color: WHITE }}>{qf.hm}</div>
                       <div style={{ fontSize: "0.88vw", color: MUTED, fontWeight: 700, marginTop: "0.15vh" }}>{qf.ampm}</div>
                     </div>
@@ -1087,16 +1102,16 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
         </section>}
 
         {/* ═══ FOOTER ═══════════════════════════════════════════════════════════ */}
-        {showFooter && <footer style={{ display: "flex", alignItems: "stretch", height: "9vh", borderTop: `1px solid ${GOLD_DIM}`, background: "rgba(0,0,0,0.65)", flexShrink: 0, overflow: "hidden" }}>
+        {showFooter && <footer style={{ display: "flex", alignItems: "stretch", height: "9vh", borderTop: `1px solid ${tGOLD_DIM}`, background: "rgba(0,0,0,0.65)", flexShrink: 0, overflow: "hidden" }}>
 
           {/* LEFT — QR code */}
-          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderRight: `1px solid ${GOLD_DIM}` }}>
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderRight: `1px solid ${tGOLD_DIM}` }}>
             {displayUrl
-              ? <QRCodeSVG value={displayUrl} size={52} bgColor="transparent" fgColor={GOLD} level="M"/>
-              : <div style={{ width: 52, height: 52, background: GOLD_DIM, borderRadius: 4 }}/>
+              ? <QRCodeSVG value={displayUrl} size={52} bgColor="transparent" fgColor={tGOLD} level="M"/>
+              : <div style={{ width: 52, height: 52, background: tGOLD_DIM, borderRadius: 4 }}/>
             }
             <div style={{ display: "flex", flexDirection: "column", gap: "0.1vh" }}>
-              <div style={{ fontSize: "0.65vw", fontWeight: 800, letterSpacing: "0.28em", color: GOLD, lineHeight: 1.2 }}>SCAN</div>
+              <div style={{ fontSize: "0.65vw", fontWeight: 800, letterSpacing: "0.28em", color: tGOLD, lineHeight: 1.2 }}>SCAN</div>
               <div style={{ fontSize: "0.6vw", color: MUTED, letterSpacing: "0.14em", lineHeight: 1.2 }}>TO VIEW</div>
             </div>
           </div>
@@ -1109,10 +1124,10 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
           </div>
 
           {/* RIGHT — app logo */}
-          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderLeft: `1px solid ${GOLD_DIM}` }}>
-            <IconCrescent size="4vh" color={GOLD}/>
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderLeft: `1px solid ${tGOLD_DIM}` }}>
+            <IconCrescent size="4vh" color={tGOLD}/>
             <div>
-              <div style={{ fontFamily: MONO, fontSize: "1.3vw", fontWeight: 900, color: GOLD, letterSpacing: "0.06em", lineHeight: 1 }}>MAWAQIT</div>
+              <div style={{ fontFamily: MONO, fontSize: "1.3vw", fontWeight: 900, color: tGOLD, letterSpacing: "0.06em", lineHeight: 1 }}>MAWAQIT</div>
               <div style={{ fontSize: "0.6vw", color: MUTED, letterSpacing: "0.2em", lineHeight: 1.4 }}>PRAYER DISPLAY</div>
             </div>
           </div>
