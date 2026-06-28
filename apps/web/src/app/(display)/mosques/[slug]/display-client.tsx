@@ -249,57 +249,205 @@ function ProgressRing({ totalSecs, remainingSecs, color, size = "38vw" }: { tota
 
 // ── fullscreen overlay screens ───────────────────────────────────────────────────
 function IqamahScreen({ state, is24h }: { state: DisplayState; is24h: boolean }) {
-  const p = state.prayer!;
-  const secs = state.secondsUntilIqamah ?? 0;
-  const af = fmtTime(p.adhan, is24h);
-  const qf = fmtTime(p.iqamaTime, is24h);
+  const p        = state.prayer!;
+  const secs     = state.secondsUntilIqamah ?? 0;
   const totalSecs = Math.max(60, timeToSec(p.iqamaTime) - timeToSec(p.adhan));
+  const progress = Math.max(0, Math.min(1, (totalSecs - secs) / Math.max(1, totalSecs)));
+  const af       = fmtTime(p.adhan, is24h);
+  const qf       = fmtTime(p.iqamaTime, is24h);
+  const mm       = String(Math.floor(secs / 60)).padStart(2, "0");
+  const ss       = String(secs % 60).padStart(2, "0");
+  const isUrgent = secs <= 30;
+  const ac       = p.color; // prayer accent colour
+
+  // SVG ring math (300×300 viewBox)
+  const RR = 128; const CCX = 150; const CCY = 150;
+  const CCIRC = 2 * Math.PI * RR;
+  const remaining = (1 - progress) * CCIRC;
+
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#050809", color: WHITE, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.8vh", padding: "2vh 4vw" }}>
-      {/* Prayer name */}
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontFamily: MONO, fontSize: "9vw", fontWeight: 900, color: WHITE, lineHeight: 1.05, letterSpacing: "0.04em" }}>
-          {p.label.toUpperCase()}
-        </div>
-        <div style={{ fontSize: "2.8vw", color: MUTED, direction: "rtl" }}>{p.arabic}</div>
-      </div>
+    <>
+      <style>{`
+        @keyframes iq-ring-glow  { 0%,100%{opacity:0.7} 50%{opacity:1} }
+        @keyframes iq-urgent     { 0%,100%{opacity:1}   50%{opacity:0.55} }
+        @keyframes iq-float      { 0%,100%{transform:translateY(0)}  50%{transform:translateY(-6px)} }
+        @keyframes iq-spin-slow  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes iq-tick-in    { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+      `}</style>
 
-      {/* Progress ring + countdown */}
-      <div style={{ position: "relative", width: "38vw", height: "38vw", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <ProgressRing totalSecs={totalSecs} remainingSecs={secs} color={GREEN} size="38vw"/>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6vh", position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5vw", color: GREEN }}>
-            <IconClock size="1.2vw"/>
-            <span style={{ fontSize: "1vw", fontWeight: 800, letterSpacing: "0.3em" }}>IQAMAH IN</span>
+      <div style={{ position: "fixed", inset: 0, zIndex: 200, color: WHITE, overflow: "hidden",
+        background: `linear-gradient(145deg,#020407 0%,${ac}1a 45%,#020407 100%)` }}>
+
+        {/* ── Islamic geometric star tile — background texture ── */}
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.045, pointerEvents: "none" }}>
+          <defs>
+            <pattern id="iq-stars" x="0" y="0" width="90" height="90" patternUnits="userSpaceOnUse">
+              <polygon points="45,4 52,22 71,15 62,32 80,38 62,44 71,61 52,54 45,72 38,54 19,61 28,44 10,38 28,32 19,15 38,22"
+                fill={ac} opacity="0.9"/>
+              <rect x="18" y="18" width="54" height="54" fill="none" stroke={ac} strokeWidth="0.6" opacity="0.5" transform="rotate(45 45 45)"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#iq-stars)"/>
+        </svg>
+
+        {/* ── Radial glow behind countdown ── */}
+        <div style={{ position: "absolute", right: "8vw", top: "50%", transform: "translateY(-50%)",
+          width: "46vw", height: "46vw", borderRadius: "50%",
+          background: `radial-gradient(circle, ${ac}18 0%, transparent 70%)`,
+          pointerEvents: "none" }}/>
+
+        {/* ══════════ LEFT PANEL — identity ══════════ */}
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "40vw",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          padding: "4vh 3vw", gap: "3vh",
+          borderRight: `1px solid ${ac}28`,
+          background: `linear-gradient(160deg, ${ac}12 0%, transparent 60%)` }}>
+
+          {/* Crescent + stars accent top */}
+          <div style={{ position: "absolute", top: "2.5vh", display: "flex", alignItems: "center", gap: "1vw", opacity: 0.5 }}>
+            <span style={{ fontSize: "1.1vw", color: ac }}>✦</span>
+            <IconCrescent size="3.5vw" color={ac}/>
+            <span style={{ fontSize: "1.1vw", color: ac }}>✦</span>
           </div>
-          <CountdownDigits seconds={secs} color={GREEN} fontSize="8vw"/>
+
+          {/* Arabic prayer name — large, prayer colour */}
+          <div style={{ textAlign: "center", animation: "iq-float 4s ease-in-out infinite" }}>
+            <div style={{ fontSize: "11vw", direction: "rtl", color: ac, fontWeight: 900,
+              lineHeight: 1, letterSpacing: "-0.01em",
+              textShadow: `0 0 60px ${ac}55, 0 0 20px ${ac}33` }}>
+              {p.arabic}
+            </div>
+            {/* divider */}
+            <div style={{ height: "2px", background: `linear-gradient(90deg,transparent,${ac},transparent)`, margin: "1.5vh 0" }}/>
+            {/* English name spaced */}
+            <div style={{ fontFamily: MONO, fontSize: "3vw", fontWeight: 900,
+              letterSpacing: "0.55em", color: WHITE, opacity: 0.9 }}>
+              {p.label.split("").join(" ")}
+            </div>
+          </div>
+
+          {/* ADHAN + IQAMAH time cards */}
+          <div style={{ display: "flex", gap: "1.2vw", width: "100%" }}>
+            {([
+              { lbl: "ADHAN",  t: af, clr: GREEN },
+              { lbl: "IQAMAH", t: qf, clr: GOLD  },
+            ] as { lbl: string; t: { hm: string; ampm: string }; clr: string }[]).map(({ lbl, t, clr }) => (
+              <div key={lbl} style={{ flex: 1, textAlign: "center", borderRadius: "12px",
+                background: `${clr}0d`, border: `1px solid ${clr}35`, padding: "1.4vh 0.5vw" }}>
+                <div style={{ fontSize: "0.78vw", fontWeight: 900, letterSpacing: "0.32em", color: clr, marginBottom: "0.5vh" }}>{lbl}</div>
+                <div style={{ fontFamily: CLOCK, fontSize: "3.8vw", color: WHITE, lineHeight: 1 }}>{t.hm}</div>
+                {t.ampm && <div style={{ fontSize: "1.1vw", color: clr, fontWeight: 700, marginTop: "0.3vh" }}>{t.ampm}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* Verse */}
+          <div style={{ textAlign: "center", maxWidth: "30vw" }}>
+            <div style={{ fontSize: "0.9vw", fontStyle: "italic", color: MUTED, lineHeight: 2 }}>
+              ❝ Hasten to prayer,<br/>hasten to success. ❞
+            </div>
+            <div style={{ fontSize: "0.85vw", color: GOLD, fontWeight: 700, letterSpacing: "0.14em", marginTop: "0.6vh" }}>
+              — الأَذَان
+            </div>
+          </div>
+
+          {/* Mosque silhouette watermark bottom */}
+          <div style={{ position: "absolute", bottom: "-1vh", opacity: 0.07, pointerEvents: "none" }}>
+            <IconMosque size="22vw" color={ac}/>
+          </div>
+        </div>
+
+        {/* ══════════ RIGHT PANEL — countdown ══════════ */}
+        <div style={{ position: "absolute", left: "40vw", right: 0, top: 0, bottom: 0,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2.5vh" }}>
+
+          {/* IQAMAH IN badge */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.8vw",
+            background: `${ac}15`, border: `1px solid ${ac}40`,
+            borderRadius: "99px", padding: "0.6vh 2.4vw" }}>
+            <IconClock size="1.3vw" color={ac}/>
+            <span style={{ fontSize: "1.05vw", fontWeight: 900, letterSpacing: "0.38em", color: ac }}>
+              IQAMAH IN
+            </span>
+          </div>
+
+          {/* The big countdown ring */}
+          <div style={{ position: "relative", width: "44vw", height: "44vw",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: isUrgent ? "iq-urgent 0.7s ease-in-out infinite" : undefined }}>
+
+            <svg viewBox="0 0 300 300" style={{ position: "absolute", inset: 0, width: "100%", height: "100%",
+              animation: "iq-ring-glow 3s ease-in-out infinite" }}>
+              {/* Outer tick ring — 60 second marks */}
+              {Array.from({ length: 60 }).map((_, i) => {
+                const angle = (i / 60) * 2 * Math.PI - Math.PI / 2;
+                const major = i % 5 === 0;
+                const r1 = major ? 140 : 143;
+                return (
+                  <line key={i}
+                    x1={CCX + r1 * Math.cos(angle)} y1={CCY + r1 * Math.sin(angle)}
+                    x2={CCX + 148 * Math.cos(angle)} y2={CCY + 148 * Math.sin(angle)}
+                    stroke={`${ac}${major ? "70" : "28"}`} strokeWidth={major ? "2.5" : "1"}/>
+                );
+              })}
+              {/* Decorative outer circle */}
+              <circle cx={CCX} cy={CCY} r="148" fill="none" stroke={`${ac}18`} strokeWidth="1"/>
+              {/* Background track */}
+              <circle cx={CCX} cy={CCY} r={RR} fill="none" stroke={`${ac}14`} strokeWidth="12"/>
+              {/* Countdown progress arc */}
+              <circle cx={CCX} cy={CCY} r={RR} fill="none" stroke={ac} strokeWidth="12"
+                strokeLinecap="round"
+                strokeDasharray={`${remaining} ${CCIRC}`}
+                transform={`rotate(-90 ${CCX} ${CCY})`}
+                style={{ transition: "stroke-dasharray 1s linear",
+                  filter: `drop-shadow(0 0 10px ${ac}aa)` }}/>
+              {/* Inner accent ring */}
+              <circle cx={CCX} cy={CCY} r="100" fill="none" stroke={`${ac}18`} strokeWidth="1"
+                strokeDasharray="4 6"/>
+              {/* Centre fill */}
+              <circle cx={CCX} cy={CCY} r="96" fill={`${ac}07`}/>
+              {/* Spinning decorative ring (very slow) */}
+              <g style={{ transformOrigin: "150px 150px", animation: "iq-spin-slow 60s linear infinite" }}>
+                {Array.from({ length: 8 }).map((_, i) => {
+                  const a = (i / 8) * 2 * Math.PI;
+                  return <circle key={i} cx={CCX + 108 * Math.cos(a)} cy={CCY + 108 * Math.sin(a)} r="3" fill={`${ac}44`}/>;
+                })}
+              </g>
+            </svg>
+
+            {/* Countdown digits overlay */}
+            <div style={{ position: "relative", zIndex: 1, textAlign: "center",
+              animation: "iq-tick-in 0.3s ease-out" }}>
+              <div style={{ fontFamily: CLOCK, lineHeight: 1, letterSpacing: "0.04em",
+                fontSize: isUrgent ? "14vw" : "12vw",
+                color: isUrgent ? RED : WHITE,
+                textShadow: `0 0 50px ${isUrgent ? "#ef444466" : `${ac}44`}` }}>
+                {mm}:{ss}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-evenly", marginTop: "0.8vh", paddingInline: "4vw" }}>
+                <span style={{ fontSize: "1.1vw", fontWeight: 800, letterSpacing: "0.28em", color: ac, opacity: 0.8 }}>MINS</span>
+                <span style={{ color: `${ac}50`, fontSize: "1.1vw" }}>·</span>
+                <span style={{ fontSize: "1.1vw", fontWeight: 800, letterSpacing: "0.28em", color: ac, opacity: 0.8 }}>SECS</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Prepare badge */}
+          <div style={{ background: `${ac}0e`, border: `1px solid ${ac}28`, borderRadius: "10px",
+            padding: "1.2vh 3vw", textAlign: "center" }}>
+            <div style={{ fontSize: "1.1vw", fontWeight: 700, color: WHITE, letterSpacing: "0.2em" }}>
+              PLEASE PREPARE FOR PRAYER
+            </div>
+            {isUrgent && (
+              <div style={{ fontSize: "0.85vw", color: RED, letterSpacing: "0.18em", marginTop: "0.3vh",
+                fontWeight: 800, animation: "iq-urgent 0.7s ease-in-out infinite" }}>
+                ● IQAMAH IMMINENT
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Gold divider */}
-      <div style={{ width: "50vw", height: "2px", background: `linear-gradient(90deg,transparent,${GOLD_LINE},transparent)` }}/>
-
-      {/* Adhan / Iqamah times */}
-      <div style={{ display: "flex", gap: "6vw", alignItems: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "1.1vw", fontWeight: 700, letterSpacing: "0.2em", color: GREEN, marginBottom: "0.5vh" }}>ADHAN</div>
-          <div style={{ fontFamily: CLOCK, fontSize: "4.5vw", color: WHITE }}>{af.hm}</div>
-          <div style={{ fontSize: "1.4vw", color: MUTED, marginTop: "0.3vh" }}>{af.ampm}</div>
-        </div>
-        <div style={{ width: "1px", height: "8vh", background: GOLD_LINE }}/>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "1.1vw", fontWeight: 700, letterSpacing: "0.2em", color: GOLD, marginBottom: "0.5vh" }}>IQAMAH</div>
-          <div style={{ fontFamily: CLOCK, fontSize: "4.5vw", color: WHITE }}>{qf.hm}</div>
-          <div style={{ fontSize: "1.4vw", color: MUTED, marginTop: "0.3vh" }}>{qf.ampm}</div>
-        </div>
-      </div>
-
-      {/* Verse */}
-      <p style={{ fontSize: "1vw", fontStyle: "italic", color: MUTED, textAlign: "center", margin: 0, maxWidth: "50vw", lineHeight: 1.7 }}>
-        ❝ Hasten to prayer, hasten to success. ❞
-        <span style={{ display: "block", color: GOLD, fontStyle: "normal", marginTop: "0.3vh" }}>— Adhan</span>
-      </p>
-    </div>
+    </>
   );
 }
 
