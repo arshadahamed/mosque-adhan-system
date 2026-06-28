@@ -1,19 +1,21 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { addMinutes, formatCountdown, getNextPrayer, type NextPrayer } from "@/lib/display-utils";
+import { addMinutes, formatCountdown, getNextPrayer, applyHijriAdjust, type NextPrayer } from "@/lib/display-utils";
 
+// ── interfaces ──────────────────────────────────────────────────────────────────
 interface PrayerDay {
   year: number; month: number; day: number;
   fajr: string; shuruq: string; dhuhr: string; asr: string; maghrib: string; isha: string;
 }
-
 interface WidgetData {
   mosque: {
     id: string; slug: string; name: string; timezone: string;
     config?: {
-      iqama?: { fajr?: number; dhuhr?: number; asr?: number; maghrib?: number; isha?: number };
-      jumua?: { time1?: string; time2?: string; jumua2Enabled?: boolean };
+      regional?: { timeFormat?: string; tempUnit?: string };
+      iqama?: { fajr?: number; dhuhr?: number; asr?: number; maghrib?: number; isha?: number; enabled?: boolean };
+      jumua?: { time1?: string; time2?: string; enabled?: boolean };
+      display?: { wallpaper?: string; bgImageUrl?: string; bgColor?: string; theme?: string };
       content?: { messages?: { content: string }[] };
     };
   };
@@ -21,224 +23,551 @@ interface WidgetData {
   tomorrow: PrayerDay | null;
   flashMessages?: { content: string }[];
 }
-
 interface MosqueData {
-  id: string; name: string; city?: string;
-  latitude: number; longitude: number; status: string;
-  logoUrl?: string;
+  id: string; name: string; city?: string; latitude: number; longitude: number; status: string;
+  logoUrl?: string; associationName?: string;
 }
-
 interface Props { mosque: MosqueData; widget: WidgetData | null }
 
-const PRAYER_KEYS = ["fajr", "dhuhr", "asr", "maghrib", "isha"] as const;
-const PRAYER_LABELS: Record<string, string> = {
-  fajr: "Fajr", dhuhr: "Dhuhr", asr: "Asr", maghrib: "Maghrib", isha: "Isha",
+// ── constants ───────────────────────────────────────────────────────────────────
+const DARK      = "#06080a";
+const GOLD      = "#c8a84a";
+const GOLD_DIM  = "rgba(200,168,74,0.22)";
+const GOLD_LINE = "rgba(200,168,74,0.45)";
+const GREEN     = "#22c55e";
+const GREEN_DIM = "rgba(34,197,94,0.15)";
+const RED       = "#ef4444";
+const WHITE     = "#f2f2f0";
+const MUTED     = "rgba(242,242,240,0.5)";
+const MONO      = "var(--font-orbitron), 'Courier New', monospace";
+const CLOCK     = "var(--font-bebas), 'Bebas Neue', impact, sans-serif";
+const API       = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+
+const DEFAULT_QUOTE = "And establish prayer and give zakah and bow with those who bow.";
+const DEFAULT_REF   = "— Al-Baqarah 2:43";
+
+const WALLPAPER_BG: Record<string, string> = {
+  "void":        "linear-gradient(135deg,#080808,#141414)",
+  "dark-purple": "linear-gradient(135deg,#1a0533,#3d0066)",
+  "blue":        "linear-gradient(135deg,#0a1628,#1a3a5c)",
+  "green":       "linear-gradient(135deg,#002200,#005500)",
+  "cosmic":      "linear-gradient(135deg,#050510,#1a0a3c)",
+  "teal":        "linear-gradient(135deg,#003333,#006666)",
+  "charcoal":    "linear-gradient(135deg,#1c1c1c,#2d2d2d)",
+  "amber":       "linear-gradient(135deg,#1a0a00,#3d1a00)",
+  "dawn":        "linear-gradient(135deg,#0d0d1a,#2a1a2e)",
+  "deep-sea":    "linear-gradient(135deg,#000033,#001a33)",
+  "mosque":      "linear-gradient(135deg,#2c1810,#5c3a2a)",
+  "night":       "linear-gradient(135deg,#050510,#0a0a1a)",
 };
-const PRAYER_LABELS_AR: Record<string, string> = {
-  fajr: "الفجر", dhuhr: "الظهر", asr: "العصر", maghrib: "المغرب", isha: "العشاء",
+
+const THEME_COLORS: Record<string, { gold: string; green: string; card: string }> = {
+  default: { gold: "#c8a84a", green: "#22c55e", card: "rgba(9,18,13,0.97)"  },
+  dark:    { gold: "#9ca3af", green: "#6b7280", card: "rgba(5,5,5,0.98)"    },
+  minimal: { gold: "#94a3b8", green: "#38bdf8", card: "rgba(8,12,18,0.97)"  },
+  classic: { gold: "#d4a017", green: "#16a34a", card: "rgba(10,15,8,0.97)"  },
 };
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+const PRAYER_CFG = [
+  { key: "fajr",    label: "FAJR",    arabic: "الفجر",  isDark: true,  color: "#818cf8" },
+  { key: "dhuhr",   label: "DHUHR",   arabic: "الظهر",  isDark: false, color: "#fbbf24" },
+  { key: "asr",     label: "ASR",     arabic: "العصر",  isDark: false, color: "#fb923c" },
+  { key: "maghrib", label: "MAGHRIB", arabic: "المغرب", isDark: false, color: "#f87171" },
+  { key: "isha",    label: "ISHA",    arabic: "العشاء", isDark: true,  color: "#a78bfa" },
+] as const;
 
-export function ClassicDisplayClient({ mosque, widget: initialWidget }: Props) {
-  const [widget, setWidget] = useState<WidgetData | null>(initialWidget);
-  const [now, setNow]       = useState(new Date());
-  const [temperature, setTemperature] = useState<number | null>(null);
-  const [displayUrl, setDisplayUrl]   = useState("");
-  const [flashIndex, setFlashIndex]   = useState(0);
+// ── icons ────────────────────────────────────────────────────────────────────────
+const IconMosque = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 60 56" width={size} height={size} fill={color}>
+    <ellipse cx="30" cy="22" rx="12" ry="9"/>
+    <rect x="26" y="22" width="8" height="26" rx="1"/>
+    <rect x="6" y="36" width="48" height="14" rx="3"/>
+    <ellipse cx="30" cy="36" rx="13" ry="7"/>
+    <rect x="12" y="40" width="5" height="8" rx="2" fill={DARK}/>
+    <rect x="43" y="40" width="5" height="8" rx="2" fill={DARK}/>
+    <rect x="27" y="10" width="6" height="12" rx="1"/>
+    <circle cx="30" cy="8" r="4.5"/>
+    <circle cx="32" cy="6.5" r="3.5" fill={DARK}/>
+  </svg>
+);
+const IconClock = ({ size = "1em", color = "currentColor" }: { size?: string; color?: string }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+  </svg>
+);
+const IconCrescent = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 40 40" width={size} height={size} fill={color}>
+    <path d="M20 4 A16 16 0 1 0 36 20 A12 12 0 1 1 20 4 Z"/>
+    <polygon points="27,6 29,12 35,12 30,16 32,22 27,18 22,22 24,16 19,12 25,12"/>
+  </svg>
+);
+const IconSun = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+    <circle cx="12" cy="12" r="4" fill={color} stroke="none"/>
+    {["12,2 12,5","19,12 22,12","12,19 12,22","4.22,4.22 6.34,6.34","17.66,17.66 19.78,19.78","4.22,19.78 6.34,17.66","17.66,6.34 19.78,4.22","2,12 5,12"].map((p, i) => <line key={i} x1={p.split(" ")[0].split(",")[0]} y1={p.split(" ")[0].split(",")[1]} x2={p.split(" ")[1].split(",")[0]} y2={p.split(" ")[1].split(",")[1]}/>)}
+  </svg>
+);
+const IconMoon = ({ size = "1em", color = "currentColor" }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill={color}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
 
-  useEffect(() => { setDisplayUrl(window.location.origin + window.location.pathname.replace("/classic", "")); }, []);
+// ── helpers ──────────────────────────────────────────────────────────────────────
+function timeToSec(hhmm: string | undefined): number {
+  if (!hhmm?.includes(":")) return -1;
+  const [h, m] = hhmm.split(":").map(Number);
+  return isNaN(h) || isNaN(m) ? -1 : h * 3600 + m * 60;
+}
 
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
+function fmtTime(time: string | undefined, is24h: boolean): { hm: string; ampm: string } {
+  if (!time?.includes(":")) return { hm: "--:--", ampm: "" };
+  const [h, m] = time.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return { hm: "--:--", ampm: "" };
+  if (is24h) return { hm: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`, ampm: "" };
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return { hm: `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")}`, ampm: h >= 12 ? "PM" : "AM" };
+}
 
-  const fetchTemp = useCallback(async () => {
+function validJumuaTime(t: string | undefined): string | undefined {
+  if (!t?.trim()) return undefined;
+  return timeToSec(t) > 0 ? t : undefined;
+}
+
+function getWeather(code: number | null): { label: string; icon: string } {
+  if (code === null) return { label: "WEATHER",       icon: "—"  };
+  if (code === 0)    return { label: "CLEAR SKY",     icon: "☀️" };
+  if (code === 1)    return { label: "MAINLY CLEAR",  icon: "🌤️" };
+  if (code === 2)    return { label: "PARTLY CLOUDY", icon: "⛅" };
+  if (code === 3)    return { label: "OVERCAST",      icon: "☁️" };
+  if (code <= 48)    return { label: "FOGGY",         icon: "🌫️" };
+  if (code <= 55)    return { label: "DRIZZLE",       icon: "🌦️" };
+  if (code <= 65)    return { label: "RAIN",          icon: "🌧️" };
+  if (code <= 75)    return { label: "SNOW",          icon: "❄️" };
+  if (code <= 82)    return { label: "SHOWERS",       icon: "🌦️" };
+  return             { label: "THUNDERSTORM",         icon: "⛈️" };
+}
+
+// ── main component ───────────────────────────────────────────────────────────────
+export function ClassicDisplayClient({ mosque, widget: initial }: Props) {
+  const [widget, setWidget] = useState<WidgetData | null>(initial);
+  const [now, setNow]       = useState<Date | null>(null);
+  const [temp, setTemp]     = useState<number | null>(null);
+  const [wCode, setWCode]   = useState<number | null>(null);
+  const [displayUrl, setDisplayUrl] = useState("");
+  const [flashIndex, setFlashIndex] = useState(0);
+
+  useEffect(() => { setNow(new Date()); const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => { setDisplayUrl(window.location.href); }, []);
+
+  const fetchWeather = useCallback(async () => {
     try {
-      const res = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${mosque.latitude}&longitude=${mosque.longitude}&current=temperature_2m&temperature_unit=celsius`
-      );
-      const json = await res.json();
-      setTemperature(Math.round(json.current.temperature_2m));
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${mosque.latitude}&longitude=${mosque.longitude}&current=temperature_2m,weather_code&temperature_unit=celsius`);
+      const j = await r.json();
+      setTemp(Math.round(j.current.temperature_2m));
+      setWCode(j.current.weather_code ?? null);
     } catch {}
   }, [mosque.latitude, mosque.longitude]);
 
-  useEffect(() => {
-    fetchTemp();
-    const id = setInterval(fetchTemp, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [fetchTemp]);
+  useEffect(() => { fetchWeather(); const id = setInterval(fetchWeather, 5 * 60 * 1000); return () => clearInterval(id); }, [fetchWeather]);
 
   useEffect(() => {
     const id = setInterval(async () => {
-      try {
-        const res = await fetch(`${API}/mosques/${mosque.id}/widget`);
-        if (res.ok) { const json = await res.json(); setWidget(json.data); }
-      } catch {}
-    }, 10 * 60 * 1000);
+      try { const r = await fetch(`${API}/mosques/${mosque.id}/widget`); if (r.ok) setWidget((await r.json()).data); } catch {}
+    }, 60 * 1000);
     return () => clearInterval(id);
   }, [mosque.id]);
 
-  const today  = widget?.today ?? null;
-  const iqama  = widget?.mosque.config?.iqama ?? {};
-  const jumua  = widget?.mosque.config?.jumua;
-  const msgs   = widget?.flashMessages ?? widget?.mosque.config?.content?.messages ?? [];
+  // ── config ───────────────────────────────────────────────────────────────────
+  const today   = widget?.today ?? null;
+  const iqamaCfg = widget?.mosque.config?.iqama ?? {};
+  const iqamaEnabled = (iqamaCfg as { enabled?: boolean }).enabled !== false;
+  const jumuaCfg = widget?.mosque.config?.jumua;
+  const msgs = widget?.flashMessages ?? widget?.mosque.config?.content?.messages ?? [];
 
-  // Cycle flash messages every 4 seconds
+  // Cycle flash messages in ticker every 4 seconds
   useEffect(() => {
     if (msgs.length < 2) return;
-    const id = setInterval(() => setFlashIndex(i => (i + 1) % msgs.length), 4000);
+    const id = setInterval(() => setFlashIndex(i => (i + 1) % msgs.length), 4_000);
     return () => clearInterval(id);
   }, [msgs.length]);
 
-  const hijriDateEn = new Intl.DateTimeFormat("en-TN-u-ca-islamic-umalqura", {
-    day: "numeric", month: "long", year: "numeric",
-  }).format(now);
+  const is24h = widget?.mosque.config?.regional?.timeFormat === "24";
+  const tempUnit = widget?.mosque.config?.regional?.tempUnit === "F" ? "F" : "C";
+  const hijriAdjustDays = (widget?.mosque.config?.regional as { hijriAdjust?: number } | undefined)?.hijriAdjust ?? 0;
 
-  const hijriDateAr = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura", {
-    day: "numeric", month: "long", year: "numeric",
-  }).format(now);
+  const dispCfg = widget?.mosque.config?.display as { wallpaper?: string; bgImageUrl?: string; bgColor?: string; theme?: string } | undefined;
+  const bgImageUrl     = dispCfg?.bgImageUrl ?? "";
+  const safeBgImageUrl = /^https?:\/\//.test(bgImageUrl) ? bgImageUrl : "";
+  const containerBg: React.CSSProperties = safeBgImageUrl
+    ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.65),rgba(0,0,0,0.65)), url(${safeBgImageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+    : dispCfg?.bgColor
+      ? { background: dispCfg.bgColor }
+      : { background: WALLPAPER_BG[dispCfg?.wallpaper ?? "void"] ?? DARK };
 
-  const clockHMS = now.toLocaleTimeString("en-US", {
-    hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true,
+  const activeTheme = THEME_COLORS[dispCfg?.theme ?? "default"] ?? THEME_COLORS.default;
+  const tGOLD       = activeTheme.gold;
+  const tGREEN      = activeTheme.green;
+  const tCARD       = activeTheme.card;
+  const tGOLD_DIM   = `rgba(${parseInt(tGOLD.slice(1,3),16)},${parseInt(tGOLD.slice(3,5),16)},${parseInt(tGOLD.slice(5,7),16)},0.22)`;
+  const tGOLD_LINE  = `rgba(${parseInt(tGOLD.slice(1,3),16)},${parseInt(tGOLD.slice(3,5),16)},${parseInt(tGOLD.slice(5,7),16)},0.45)`;
+  const tGREEN_DIM  = `rgba(${parseInt(tGREEN.slice(1,3),16)},${parseInt(tGREEN.slice(3,5),16)},${parseInt(tGREEN.slice(5,7),16)},0.15)`;
+
+  const card: React.CSSProperties = { background: tCARD, border: `1px solid ${tGOLD_DIM}`, borderRadius: "14px", overflow: "hidden" };
+  const pill = (bg: string, color: string): React.CSSProperties => ({
+    display: "inline-flex", alignItems: "center", padding: "0.35vh 1.1vw",
+    background: bg, color, borderRadius: "99px", fontSize: "0.95vw", fontWeight: 800, letterSpacing: "0.18em", whiteSpace: "nowrap",
   });
 
+  // ── derived clock values ─────────────────────────────────────────────────────
+  let clockHM = "--:--", ampm = "", secs = "--", hijriEn = "", hijriAr = "", dayLabel = "", gregDate = "";
+  if (now) {
+    if (is24h) {
+      const t = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+      const parts = t.split(":");
+      clockHM = `${parts[0]}:${parts[1]}`; secs = parts[2]; ampm = "";
+    } else {
+      const t = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true });
+      const sp = t.lastIndexOf(" "); ampm = t.slice(sp + 1);
+      const p = t.slice(0, sp).split(":");
+      clockHM = `${p[0]}:${p[1]}`; secs = p[2];
+    }
+    dayLabel = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+    gregDate = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }).toUpperCase();
+    const hijriNow = applyHijriAdjust(now, hijriAdjustDays);
+    hijriEn = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" })
+                .format(hijriNow).replace(" AH", "").toUpperCase();
+    try { hijriAr = new Intl.DateTimeFormat("ar-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" }).format(hijriNow); } catch {}
+  }
+
+  // ── prayers ──────────────────────────────────────────────────────────────────
   const prayers = today
-    ? PRAYER_KEYS.map((key) => ({
-        key,
-        label:     PRAYER_LABELS[key],
-        labelAr:   PRAYER_LABELS_AR[key],
-        adhan:     today[key],
-        iqamaTime: addMinutes(today[key], (iqama as Record<string, number>)[key] ?? 0),
+    ? PRAYER_CFG.map((pc) => ({
+        ...pc,
+        adhan:     today[pc.key as keyof PrayerDay] as string,
+        iqamaTime: iqamaEnabled
+          ? addMinutes(today[pc.key as keyof PrayerDay] as string, (iqamaCfg as Record<string, number>)[pc.key] ?? 0)
+          : today[pc.key as keyof PrayerDay] as string,
       }))
     : [];
 
   const tomorrowFajr = widget?.tomorrow ? { fajr: widget.tomorrow.fajr } : null;
-  const nextPrayer: NextPrayer | null = today
-    ? getNextPrayer(prayers.map((p) => ({ key: p.key, label: p.label, adhan: p.adhan })), now, tomorrowFajr)
+  const nextPray: NextPrayer | null = (today && now)
+    ? getNextPrayer(prayers.map(p => ({ key: p.key, label: p.label, adhan: p.adhan })), now, tomorrowFajr)
     : null;
+  const nextData   = prayers.find(p => p.key === nextPray?.key);
+  const countdown  = nextPray ? formatCountdown(nextPray.secondsUntil) : null;
+  const [cH, cM, cS] = (countdown ?? "00:00:00").split(":");
 
-  const countdown = nextPrayer ? formatCountdown(nextPrayer.secondsUntil) : null;
-  const flashText = msgs.length > 0 ? msgs[flashIndex]?.content : null;
+  // ── Ramadan ───────────────────────────────────────────────────────────────────
+  const isRamadan = (() => {
+    if (!now) return false;
+    try { return parseInt(new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { month: "numeric" }).format(now)) === 9; } catch { return false; }
+  })();
+
+  const weather   = getWeather(wCode);
+  const cityLabel = mosque.city?.toUpperCase() ?? widget?.mosque.timezone?.split("/")[1]?.replace(/_/g, " ").toUpperCase() ?? "";
+
+  const tickerText = msgs.length > 0
+    ? msgs[flashIndex]?.content ?? ""
+    : `${DEFAULT_QUOTE}   ${DEFAULT_REF}`;
+  const tickerDuration = Math.max(30, Math.round(tickerText.length * 0.45) + 25);
 
   return (
-    <div className="starfield relative h-screen w-screen overflow-hidden text-white flex flex-col select-none">
+    <>
+      <style>{`
+        @keyframes ticker-roll {
+          from { transform: translateX(100vw); }
+          to   { transform: translateX(-100%); }
+        }
+      `}</style>
 
-      {/* ── Top bar: logo · mosque name · arabic hijri · temp ── */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-2 shrink-0 gap-4">
-        {/* Logo */}
-        <div className="w-14 h-14 flex items-center justify-center shrink-0">
-          {mosque.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={mosque.logoUrl} alt={mosque.name} className="w-14 h-14 object-contain rounded-lg" />
-          ) : (
-            <div className="w-10 h-10 rounded-full border-2 border-yellow-500/60 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 fill-yellow-500" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C10.34 2 9 3.34 9 5c0 1.1.6 2.05 1.5 2.58V9H7V7H5v2H2v2h1v9h18v-9h1V9h-3V7h-2v2h-3V7.58C14.4 7.05 15 6.1 15 5c0-1.66-1.34-3-3-3zm0 13a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
-              </svg>
-            </div>
-          )}
-        </div>
+      <div style={{ ...containerBg, color: WHITE, height: "100%", width: "100%", display: "flex", flexDirection: "column", overflow: "hidden", userSelect: "none" }}>
 
-        {/* Mosque name */}
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase text-center flex-1 leading-tight">
-          {mosque.name}
-        </h1>
-
-        {/* Arabic Hijri date */}
-        <div className="text-right shrink-0 min-w-[200px]">
-          <p className="text-yellow-400 font-semibold text-lg leading-tight" dir="rtl">{hijriDateAr}</p>
-          <p className="text-gray-400 text-xs mt-0.5">{hijriDateEn}</p>
-        </div>
-
-        {/* Temperature */}
-        <div className="text-orange-400 font-bold text-xl shrink-0 w-16 text-right">
-          {temperature !== null ? `${temperature}°C` : "--°C"}
-        </div>
-      </div>
-
-      {/* ── Middle row: Shuruq | Clock | Jumua ── */}
-      <div className="flex items-center justify-between px-8 flex-1 min-h-0">
-
-        {/* Shuruq */}
-        <div className="text-center w-44">
-          <p className="text-base text-gray-400 mb-1 tracking-wide">Shurûq</p>
-          <p className="text-sm text-gray-500 mb-2" dir="rtl">الشروق</p>
-          <p className="text-4xl font-bold tabular-nums">{today?.shuruq ?? "--:--"}</p>
-        </div>
-
-        {/* Center: clock + countdown */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="bg-purple-900/80 border border-purple-700/50 rounded-2xl px-12 py-6 text-center shadow-2xl shadow-purple-900/60 backdrop-blur-sm">
-            <div className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight">{clockHMS}</div>
-            <div className="text-purple-200 mt-2 text-base tracking-wide">{hijriDateEn}</div>
+        {/* ═══ HEADER ══════════════════════════════════════════════════════════ */}
+        <header style={{ display: "flex", alignItems: "center", gap: "1.2vw", padding: "1.1vh 1.8vw", borderBottom: `1px solid ${tGOLD_DIM}`, background: "rgba(0,0,0,0.5)", flexShrink: 0 }}>
+          {/* Logo */}
+          <div style={{ width: "5vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", paddingRight: "1.2vw", borderRight: `1px solid ${tGOLD_DIM}` }}>
+            {mosque.logoUrl
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={mosque.logoUrl} alt={mosque.name} style={{ width: "4.5vh", height: "4.5vh", objectFit: "contain", borderRadius: "6px" }}/>
+              : <IconMosque size="4.5vh" color={tGOLD}/>
+            }
           </div>
-          {nextPrayer && countdown && (
-            <div className="text-center text-base text-gray-300 tracking-wide">
-              <span className="font-semibold text-white">{nextPrayer.label}</span>
-              <span className="text-gray-400"> in </span>
-              <span className="font-bold text-yellow-300 tabular-nums">{countdown}</span>
+          {/* Name + association */}
+          <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "0.8vw", flexWrap: "wrap" }}>
+              <h1 style={{ margin: 0, fontSize: "3vw", fontWeight: 900, letterSpacing: "0.04em", lineHeight: 1, whiteSpace: "nowrap" }}>
+                {mosque.name.toUpperCase()}
+              </h1>
+              {cityLabel && <span style={{ color: tGOLD, fontSize: "1.8vw", fontWeight: 700, letterSpacing: "0.08em", flexShrink: 0 }}>· {cityLabel}</span>}
             </div>
-          )}
-        </div>
+            {mosque.associationName && (
+              <div style={{ fontSize: "0.9vw", color: MUTED, letterSpacing: "0.1em", marginTop: "0.2vh", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {mosque.associationName}
+              </div>
+            )}
+          </div>
+          {/* Weather */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(255,255,255,0.04)", border: `1px solid ${tGOLD_DIM}`, borderRadius: "12px", padding: "0.8vh 1.4vw" }}>
+            <span style={{ fontSize: "3.5vw", lineHeight: 1 }}>{weather.icon}</span>
+            <div>
+              <div style={{ fontFamily: CLOCK, fontSize: "3vw", color: "#fbbf24", lineHeight: 1 }}>
+                {temp !== null ? `${temp}°${tempUnit}` : "--°"}
+              </div>
+              <div style={{ fontSize: "0.8vw", color: tGOLD, letterSpacing: "0.12em", marginTop: "0.2vh" }}>{weather.label}</div>
+            </div>
+          </div>
+        </header>
 
-        {/* Jumua */}
-        <div className="text-center w-44">
-          <p className="text-base text-gray-400 mb-1 tracking-wide">Jumua</p>
-          <p className="text-sm text-gray-500 mb-2" dir="rtl">الجمعة</p>
-          <p className="text-4xl font-bold tabular-nums">{jumua?.time1 ?? "--:--"}</p>
-          {jumua?.jumua2Enabled && jumua.time2 && (
-            <p className="text-2xl font-semibold text-gray-300 tabular-nums mt-1">{jumua.time2}</p>
-          )}
-        </div>
-      </div>
+        {/* ═══ MIDDLE ══════════════════════════════════════════════════════════ */}
+        <main style={{ display: "flex", flex: 1, minHeight: 0, gap: "1.2vw", padding: "1.2vh 1.5vw" }}>
 
-      {/* ── Prayer columns ── */}
-      <div className="flex justify-around items-end px-6 pb-4 shrink-0">
-        {prayers.length === 0 ? (
-          <p className="text-gray-500 text-sm py-4">No prayer schedule available</p>
-        ) : (
-          prayers.map(({ key, label, labelAr, adhan, iqamaTime }) => {
-            const isNext = nextPrayer?.key === key;
+          {/* ── LEFT CARD: next prayer + countdown ─────────────────────────── */}
+          <div style={{ ...card, flex: "0 0 52vw", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+            {/* Prayer name hero */}
+            <div style={{ position: "relative", overflow: "hidden", flexShrink: 0, padding: "0.8vh 2vw 0.7vh", background: "linear-gradient(135deg,rgba(20,55,25,0.7) 0%,rgba(0,0,0,0) 70%)", borderBottom: `1px solid ${tGOLD_DIM}` }}>
+              <div style={{ position: "absolute", right: "-0.5vw", bottom: "-1.5vh", opacity: 0.06, pointerEvents: "none" }}>
+                <IconCrescent size="11vw" color={tGOLD}/>
+              </div>
+              <div style={{ marginBottom: "0.3vh" }}>
+                <span style={pill(`linear-gradient(90deg,${tGOLD},#e8c860)`, DARK)}>NEXT PRAYER</span>
+              </div>
+              <div style={{ fontFamily: MONO, fontSize: "5vw", fontWeight: 900, lineHeight: 0.9, letterSpacing: "0.02em" }}>
+                {nextPray ? nextPray.label.toUpperCase() : "——"}
+              </div>
+              <div style={{ height: "3px", width: "4vw", borderRadius: "2px", marginTop: "0.5vh", background: `linear-gradient(90deg,${tGOLD},transparent)` }}/>
+            </div>
+
+            {/* Adhan + Iqamah + Countdown */}
+            {(() => {
+              const af = fmtTime(nextData?.adhan, is24h);
+              const qf = fmtTime(nextData?.iqamaTime, is24h);
+              return (
+                <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+                  {/* ADHAN + IQAMAH column */}
+                  <div style={{ width: "44%", flexShrink: 0, padding: "0.8vh 1vw", display: "flex", flexDirection: "column", gap: "0.4vh", borderRight: `1px solid ${tGOLD_LINE}` }}>
+                    {/* ADHAN */}
+                    <div style={{ flex: 1, background: "rgba(234,179,8,0.07)", border: "1px solid rgba(234,179,8,0.25)", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "stretch" }}>
+                      <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGOLD, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>ADHAN</div>
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
+                        <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{af.hm}</div>
+                        {af.ampm && <div style={{ fontSize: "2vw", color: tGOLD, fontWeight: 700 }}>{af.ampm}</div>}
+                      </div>
+                    </div>
+                    {iqamaEnabled && (<>
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", opacity: 0.35, height: "1.4vh" }}>
+                        <span style={{ fontSize: "0.8vw", color: tGOLD }}>↓</span>
+                      </div>
+                      {/* IQAMAH */}
+                      <div style={{ flex: 1, background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "stretch" }}>
+                        <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGREEN, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>IQAMAH</div>
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
+                          <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{qf.hm}</div>
+                          {qf.ampm && <div style={{ fontSize: "2vw", color: MUTED, fontWeight: 700 }}>{qf.ampm}</div>}
+                        </div>
+                      </div>
+                    </>)}
+                  </div>
+
+                  {/* Countdown */}
+                  <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "1vh" }}>
+                    <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 55%, rgba(239,68,68,0.13) 0%, transparent 72%)", pointerEvents: "none" }}/>
+                    <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8vh" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.6vw" }}>
+                        <IconClock size="1.6vw" color={RED}/>
+                        <span style={{ fontSize: "1.2vw", letterSpacing: "0.38em", fontWeight: 800, color: RED }}>TIME TO ADHAN</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "flex-end" }}>
+                        {[{ v: cH, l: "HRS" }, { v: cM, l: "MINS" }, { v: cS, l: "SECS" }].map(({ v, l }, i) => (
+                          <div key={l} style={{ display: "flex", alignItems: "flex-end" }}>
+                            {i > 0 && <span style={{ fontFamily: CLOCK, color: RED, fontSize: "9vw", lineHeight: 1, paddingBottom: "1.8vh", opacity: 0.5 }}>:</span>}
+                            <div style={{ textAlign: "center", padding: "0 0.4vw" }}>
+                              <div style={{ fontFamily: CLOCK, fontSize: "9vw", color: RED, lineHeight: 1 }}>{v}</div>
+                              <div style={{ fontSize: "1vw", color: tGOLD, letterSpacing: "0.22em", marginTop: "0.5vh" }}>{l}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ width: "60%", height: "1px", background: `linear-gradient(90deg,transparent,${RED}44,transparent)` }}/>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* ── RIGHT PANEL: clock ───────────────────────────────────────────── */}
+          <div style={{ ...card, flex: 1, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(150deg,#080a05 0%,#16200a 40%,#26300f 65%,#0c0a03 100%)" }}/>
+            <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 70% 40%,rgba(180,130,20,0.22) 0%,transparent 65%)" }}/>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "center", color: tGOLD, opacity: 0.08, pointerEvents: "none" }}>
+              <IconMosque size="22vw" color={tGOLD}/>
+            </div>
+            <div style={{ position: "relative", zIndex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", padding: "1.2vh 2.5vw", gap: "1.2vh" }}>
+              {/* Day + date */}
+              <div>
+                <div style={{ fontSize: "0.75vw", fontWeight: 700, letterSpacing: "0.45em", color: tGOLD, opacity: 0.7 }}>TODAY</div>
+                <div style={{ fontSize: "2.4vw", fontWeight: 900, letterSpacing: "0.06em", lineHeight: 1 }}>{dayLabel || "CURRENT TIME"}</div>
+                <div style={{ fontSize: "1.05vw", color: MUTED, fontWeight: 600, letterSpacing: "0.12em", marginTop: "0.15vh" }}>{gregDate}</div>
+              </div>
+              {/* Big clock */}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: "0.4vw" }}>
+                <div style={{ fontFamily: CLOCK, fontSize: "12vw", lineHeight: 0.85, letterSpacing: "0.06em" }}>{clockHM}</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: "0.8vh", gap: "0.5vh" }}>
+                  <div style={{ fontFamily: CLOCK, fontSize: "3.5vw", color: tGREEN, lineHeight: 1 }}>:{secs}</div>
+                  {ampm && <div style={{ background: tGREEN_DIM, border: `1px solid ${tGOLD_DIM}`, borderRadius: "6px", color: tGREEN, fontSize: "1.2vw", fontWeight: 800, padding: "0.15vh 0.5vw", lineHeight: 1.3 }}>{ampm}</div>}
+                </div>
+              </div>
+              <div style={{ height: "2px", background: `linear-gradient(90deg,${tGOLD_LINE},transparent)` }}/>
+              {/* Hijri dates */}
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1vw" }}>
+                <div style={{ fontSize: "1.3vw", letterSpacing: "0.1em", color: MUTED, fontWeight: 600 }}>{hijriEn}</div>
+                {hijriAr && <div style={{ fontSize: "1.6vw", direction: "rtl", color: WHITE, fontWeight: 600 }}>{hijriAr}</div>}
+              </div>
+              {/* Sunrise + Jumu'ah (or Ramadan times) */}
+              <div style={{ display: "flex", gap: "0.8vw" }}>
+                {isRamadan ? (
+                  <>
+                    {today?.fajr && (() => { const sf = fmtTime(today.fajr, is24h); return (
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(45,212,191,0.12)", border: "1px solid rgba(45,212,191,0.33)", borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                        <IconMoon size="2vw" color="#2dd4bf"/>
+                        <div>
+                          <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: "#2dd4bf" }}>SUHOOR ENDS</div>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                            <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{sf.hm}</span>
+                            {sf.ampm && <span style={{ fontSize: "1.2vw", color: "#2dd4bf", fontWeight: 700 }}>{sf.ampm}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ); })()}
+                    {today?.maghrib && (() => { const mf = fmtTime(today.maghrib, is24h); return (
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.25)", borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                        <IconSun size="2vw" color="#f97316"/>
+                        <div>
+                          <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: "#f97316" }}>IFTAR</div>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                            <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{mf.hm}</span>
+                            {mf.ampm && <span style={{ fontSize: "1.2vw", color: "#f97316", fontWeight: 700 }}>{mf.ampm}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ); })()}
+                  </>
+                ) : (
+                  <>
+                    {today?.shuruq && (() => { const sf = fmtTime(today.shuruq, is24h); return (
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: "rgba(251,191,36,0.07)", border: "1px solid rgba(251,191,36,0.18)", borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                        <IconSun size="2vw" color="#fbbf24"/>
+                        <div>
+                          <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: "#fbbf24" }}>SUNRISE</div>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                            <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{sf.hm}</span>
+                            {sf.ampm && <span style={{ fontSize: "1.2vw", color: "#fbbf24", fontWeight: 700 }}>{sf.ampm}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ); })()}
+                    {jumuaCfg?.enabled && now?.getDay() === 5 && (() => {
+                      const jt = validJumuaTime(jumuaCfg.time1) ?? today?.dhuhr;
+                      if (!jt) return null;
+                      const jf = fmtTime(jt, is24h);
+                      return (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "0.8vw", background: tGREEN_DIM, border: `1px solid ${tGOLD_DIM}`, borderRadius: "8px", padding: "0.6vh 1vw" }}>
+                          <IconCrescent size="2vw" color={tGREEN}/>
+                          <div>
+                            <div style={{ fontSize: "0.9vw", fontWeight: 700, letterSpacing: "0.3em", color: tGREEN }}>JUMU&apos;AH</div>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: "0.4vw" }}>
+                              <span style={{ fontFamily: CLOCK, fontSize: "3vw", color: WHITE, lineHeight: 1 }}>{jf.hm}</span>
+                              {jf.ampm && <span style={{ fontSize: "1.2vw", color: tGREEN, fontWeight: 700 }}>{jf.ampm}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* ═══ PRAYER BAR ══════════════════════════════════════════════════════ */}
+        <section style={{ display: "flex", gap: "1vw", padding: "0 1.5vw 1.1vh", flexShrink: 0 }}>
+          {prayers.map((p) => {
+            const isNext = nextPray?.key === p.key;
+            const af = fmtTime(p.adhan, is24h);
+            const qf = fmtTime(p.iqamaTime, is24h);
             return (
-              <div
-                key={key}
-                className={`flex flex-col items-center rounded-xl px-6 py-4 min-w-[110px] transition-all duration-500 ${
-                  isNext
-                    ? "bg-purple-900/90 border border-purple-600/60 shadow-lg shadow-purple-900/50"
-                    : "bg-white/5 border border-white/10"
-                }`}
-              >
-                <p className="text-xs text-gray-400 uppercase tracking-widest mb-0.5">{label}</p>
-                <p className="text-xs text-yellow-500/70 mb-2" dir="rtl">{labelAr}</p>
-                <p className="text-2xl font-bold tabular-nums">{adhan}</p>
-                <p className="text-sm text-gray-300 tabular-nums mt-1">{iqamaTime}</p>
+              <div key={p.key} style={{
+                ...card, flex: 1, padding: "0.8vh 0.7vw", position: "relative",
+                display: "flex", flexDirection: "column", justifyContent: "space-between",
+                border: isNext ? `1px solid ${tGOLD}` : `1px solid ${tGOLD_DIM}`,
+                background: isNext ? "rgba(200,168,74,0.06)" : tCARD,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4vw" }}>
+                    {p.isDark ? <IconMoon size="1.6vw" color={p.color}/> : <IconSun size="1.6vw" color={p.color}/>}
+                    <div style={{ fontSize: "1.3vw", fontWeight: 900, letterSpacing: "0.08em" }}>{p.label}</div>
+                  </div>
+                  {isNext && (
+                    <span style={{ ...pill(tGREEN_DIM, tGREEN), fontSize: "0.75vw", padding: "0.2vh 0.7vw" }}>▶ NEXT</span>
+                  )}
+                </div>
+                <div style={{ height: "1px", background: `linear-gradient(90deg,${tGOLD_DIM},transparent)`, margin: "0.3vh 0" }}/>
+                <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
+                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${tGOLD_DIM}` }}>
+                    <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: tGREEN, marginBottom: "0.15vh" }}>ADHAN</div>
+                    <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1 }}>{af.hm}</div>
+                    <div style={{ fontSize: "0.88vw", color: tGOLD, fontWeight: 700, marginTop: "0.15vh" }}>{af.ampm}</div>
+                  </div>
+                  {iqamaEnabled && (
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: tGOLD, marginBottom: "0.15vh" }}>IQAMAH</div>
+                      <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1 }}>{qf.hm}</div>
+                      <div style={{ fontSize: "0.88vw", color: MUTED, fontWeight: 700, marginTop: "0.15vh" }}>{qf.ampm}</div>
+                    </div>
+                  )}
+                </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </section>
 
-      {/* ── Bottom: flash ticker + QR ── */}
-      <div className="flex items-center shrink-0 border-t border-white/10 bg-black/40">
-        {/* Flash message */}
-        <div className="flex-1 h-10 overflow-hidden flex items-center">
-          {flashText ? (
-            <span className="marquee text-sm text-gray-300 px-4 whitespace-nowrap">{flashText}</span>
-          ) : (
-            <span className="text-xs text-gray-600 px-4">mawaqit.net</span>
-          )}
-        </div>
-
-        {/* QR code */}
-        {displayUrl && (
-          <div className="px-3 py-1.5 flex items-center gap-2 border-l border-white/10">
-            <QRCodeSVG value={displayUrl} size={36} bgColor="transparent" fgColor="#eab308" level="M" />
-            <span className="text-xs text-gray-500">Scan</span>
+        {/* ═══ FOOTER ══════════════════════════════════════════════════════════ */}
+        <footer style={{ display: "flex", alignItems: "stretch", height: "9vh", borderTop: `1px solid ${tGOLD_DIM}`, background: "rgba(0,0,0,0.65)", flexShrink: 0, overflow: "hidden" }}>
+          {/* QR code */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderRight: `1px solid ${tGOLD_DIM}` }}>
+            {displayUrl
+              ? <QRCodeSVG value={displayUrl} size={52} bgColor="transparent" fgColor={tGOLD} level="M"/>
+              : <div style={{ width: 52, height: 52, background: tGOLD_DIM, borderRadius: 4 }}/>
+            }
+            <div>
+              <div style={{ fontSize: "0.65vw", fontWeight: 800, letterSpacing: "0.28em", color: tGOLD, lineHeight: 1.2 }}>SCAN</div>
+              <div style={{ fontSize: "0.6vw", color: MUTED, letterSpacing: "0.14em", lineHeight: 1.2 }}>TO VIEW</div>
+            </div>
           </div>
-        )}
+          {/* Flash message / ticker */}
+          <div style={{ flex: 1, overflow: "hidden", position: "relative", display: "flex", alignItems: "center" }}>
+            <span
+              key={tickerText}
+              style={{ position: "absolute", whiteSpace: "nowrap", fontSize: "2.4vw", fontWeight: 800, color: WHITE, animation: `ticker-roll ${tickerDuration}s linear infinite` }}
+            >
+              {tickerText}
+            </span>
+          </div>
+          {/* Mawaqit logo */}
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "0.7vw", padding: "0 1.3vw", borderLeft: `1px solid ${tGOLD_DIM}` }}>
+            <IconCrescent size="4vh" color={tGOLD}/>
+            <div>
+              <div style={{ fontFamily: MONO, fontSize: "1.3vw", fontWeight: 900, color: tGOLD, letterSpacing: "0.06em", lineHeight: 1 }}>MAWAQIT</div>
+              <div style={{ fontSize: "0.6vw", color: MUTED, letterSpacing: "0.2em", lineHeight: 1.4 }}>PRAYER DISPLAY</div>
+            </div>
+          </div>
+        </footer>
+
       </div>
-    </div>
+    </>
   );
 }
