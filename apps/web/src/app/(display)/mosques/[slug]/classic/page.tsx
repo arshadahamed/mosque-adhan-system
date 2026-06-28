@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { ClassicDisplayClient } from "./classic-client";
+import { DisplayClient } from "../display-client";
 
 const API = process.env.API_INTERNAL_URL
   ? `${process.env.API_INTERNAL_URL}/api/v1`
@@ -37,5 +37,5 @@ export default async function MosqueClassicDisplayPage({ params }: Props) {
 
   const widget = await getWidget(mosque.id);
 
-  return <ClassicDisplayClient mosque={mosque} widget={widget} />;
+  return <DisplayClient mosque={mosque} widget={widget} />;
 }

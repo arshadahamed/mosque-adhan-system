@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { DisplayClient } from "./display-client";
+import { ClassicDisplayClient } from "./classic/classic-client";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+const API = process.env.API_INTERNAL_URL
+  ? `${process.env.API_INTERNAL_URL}/api/v1`
+  : "http://localhost:4000/api/v1";
 
 async function getMosque(slug: string) {
   const res = await fetch(`${API}/mosques/${slug}`, { next: { revalidate: 300 } });
@@ -35,5 +37,5 @@ export default async function MosqueDisplayPage({ params }: Props) {
 
   const widget = await getWidget(mosque.id);
 
-  return <DisplayClient mosque={mosque} widget={widget} />;
+  return <ClassicDisplayClient mosque={mosque} widget={widget} />;
 }
