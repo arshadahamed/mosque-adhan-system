@@ -349,10 +349,10 @@ export function ClassicDisplayClient({ mosque, widget: initial }: Props) {
                   {/* ADHAN + IQAMAH column */}
                   <div style={{ width: "44%", flexShrink: 0, padding: "0.8vh 1vw", display: "flex", flexDirection: "column", gap: "0.4vh", borderRight: `1px solid ${tGOLD_LINE}` }}>
                     {/* ADHAN */}
-                    <div style={{ flex: 1, background: "rgba(234,179,8,0.07)", border: "1px solid rgba(234,179,8,0.25)", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "stretch" }}>
+                    <div style={{ flex: 1, background: "rgba(234,179,8,0.13)", border: "1px solid rgba(234,179,8,0.45)", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "stretch" }}>
                       <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGOLD, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>ADHAN</div>
                       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
-                        <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{af.hm}</div>
+                        <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: tGOLD }}>{af.hm}</div>
                         {af.ampm && <div style={{ fontSize: "2vw", color: tGOLD, fontWeight: 700 }}>{af.ampm}</div>}
                       </div>
                     </div>
@@ -361,11 +361,11 @@ export function ClassicDisplayClient({ mosque, widget: initial }: Props) {
                         <span style={{ fontSize: "0.8vw", color: tGOLD }}>↓</span>
                       </div>
                       {/* IQAMAH */}
-                      <div style={{ flex: 1, background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.25)", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "stretch" }}>
+                      <div style={{ flex: 1, background: "rgba(34,197,94,0.13)", border: "1px solid rgba(34,197,94,0.45)", borderRadius: "10px", overflow: "hidden", display: "flex", alignItems: "stretch" }}>
                         <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGREEN, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>IQAMAH</div>
                         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
-                          <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: WHITE }}>{qf.hm}</div>
-                          {qf.ampm && <div style={{ fontSize: "2vw", color: MUTED, fontWeight: 700 }}>{qf.ampm}</div>}
+                          <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: tGREEN }}>{qf.hm}</div>
+                          {qf.ampm && <div style={{ fontSize: "2vw", color: tGREEN, fontWeight: 700 }}>{qf.ampm}</div>}
                         </div>
                       </div>
                     </>)}
