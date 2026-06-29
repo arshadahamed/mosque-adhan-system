@@ -1188,7 +1188,7 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
             const isNext = nextPray?.key === p.key;
             const af = fmtTime(p.adhan, is24h);
             const qf = fmtTime(p.iqamaTime, is24h);
-            const cardAccent = isPreAdhan && isNext ? AMBER : p.color;
+            const c = isPreAdhan && isNext ? AMBER : p.color;
             return (
               <div key={p.key} className={isPreAdhan && isNext ? "pre-adhan-card" : ""} style={{
                 ...card,
@@ -1196,37 +1196,35 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                 padding: isNext ? "1vh 0.9vw" : "0.8vh 0.7vw",
                 position: "relative",
                 display: "flex", flexDirection: "column", justifyContent: "space-between",
-                border: isNext ? `1.5px solid ${cardAccent}80` : `1px solid ${tGOLD_DIM}`,
+                border: isNext ? `1.5px solid ${c}90` : `1px solid ${c}35`,
                 background: isNext
-                  ? `linear-gradient(160deg,${cardAccent}18 0%,rgba(0,0,0,0) 55%),${tCARD}`
-                  : tCARD,
-                boxShadow: isNext ? `0 0 22px ${cardAccent}20` : "none",
+                  ? `linear-gradient(160deg,${c}22 0%,rgba(0,0,0,0) 55%),${tCARD}`
+                  : `linear-gradient(160deg,${c}0a 0%,rgba(0,0,0,0) 55%),${tCARD}`,
+                boxShadow: isNext ? `0 0 22px ${c}25` : `0 0 8px ${c}10`,
                 transition: "flex 0.4s, border-color 0.5s, background 0.5s",
               }}>
-                {/* Top colour strip for NEXT card */}
-                {isNext && (
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: `linear-gradient(90deg,${cardAccent},${cardAccent}80,transparent)`, borderRadius: "14px 14px 0 0", pointerEvents: "none" }}/>
-                )}
+                {/* Top colour strip — full on NEXT, subtle on others */}
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: isNext ? "3px" : "2px", background: `linear-gradient(90deg,${c},${c}60,transparent)`, borderRadius: "14px 14px 0 0", opacity: isNext ? 1 : 0.55, pointerEvents: "none" }}/>
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4vw" }}>
                     {p.isDark
-                      ? <IconMoon size={isNext ? "2vw" : "1.6vw"} color={p.color}/>
-                      : <IconSun  size={isNext ? "2vw" : "1.6vw"} color={p.color}/>
+                      ? <IconMoon size={isNext ? "2vw" : "1.6vw"} color={c}/>
+                      : <IconSun  size={isNext ? "2vw" : "1.6vw"} color={c}/>
                     }
-                    <div style={{ fontSize: isNext ? "1.8vw" : "1.3vw", fontWeight: 900, letterSpacing: "0.08em", color: WHITE }}>{p.label}</div>
+                    <div style={{ fontSize: isNext ? "1.8vw" : "1.3vw", fontWeight: 900, letterSpacing: "0.08em", color: isNext ? c : WHITE }}>{p.label}</div>
                   </div>
                   {isNext && (
-                    <span style={{ ...pill(`linear-gradient(90deg,${cardAccent}35,${cardAccent}18)`, cardAccent), fontSize: "0.9vw", padding: "0.3vh 0.9vw", border: `1px solid ${cardAccent}50` }}>
+                    <span style={{ ...pill(`linear-gradient(90deg,${c}40,${c}20)`, c), fontSize: "0.9vw", padding: "0.3vh 0.9vw", border: `1px solid ${c}55` }}>
                       {isPreAdhan ? "⚡ SOON" : "▶ NEXT"}
                     </span>
                   )}
                 </div>
                 {/* Divider */}
-                <div style={{ height: isNext ? "1.5px" : "1px", background: isNext ? `linear-gradient(90deg,${cardAccent}55,${cardAccent}15,transparent)` : `linear-gradient(90deg,${tGOLD_DIM},transparent)`, margin: "0.3vh 0" }}/>
+                <div style={{ height: "1px", background: `linear-gradient(90deg,${c}${isNext ? "55" : "30"},transparent)`, margin: "0.3vh 0" }}/>
                 {/* Times */}
                 <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
-                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${isNext ? cardAccent + "30" : tGOLD_DIM}` }}>
+                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${c}25` }}>
                     <div style={{ fontSize: isNext ? "1.05vw" : "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: "#fbbf24", marginBottom: "0.15vh" }}>ADHAN</div>
                     <div style={{ fontFamily: CLOCK, fontSize: isNext ? "3.8vw" : "3.2vw", lineHeight: 1, color: "#fbbf24" }}>{af.hm}</div>
                     <div style={{ fontSize: isNext ? "1vw" : "0.88vw", color: "#fbbf24", fontWeight: 700, marginTop: "0.15vh" }}>{af.ampm}</div>
