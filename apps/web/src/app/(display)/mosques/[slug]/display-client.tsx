@@ -1010,39 +1010,35 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
               const pColor   = nextData?.color ?? tGOLD;
               return (
                 <>
-                  {/* ADHAN + IQAMAH horizontal row */}
-                  <div style={{ flexShrink: 0, padding: "0.8vh 1.2vw", display: "flex", gap: "0.8vw", borderBottom: `1px solid ${tGOLD_LINE}` }}>
-                    {/* ADHAN */}
-                    <div style={{ flex: 1, borderRadius: "10px", background: "rgba(234,179,8,0.11)", border: "1px solid rgba(234,179,8,0.42)", display: "flex", flexDirection: "column", alignItems: "center", padding: "0.7vh 0.8vw" }}>
-                      <div style={{ fontSize: "1.2vw", letterSpacing: "0.3em", color: "#fbbf24", fontWeight: 800, marginBottom: "0.3vh" }}>ADHAN</div>
+                  {/* ADHAN + IQAMAH — clean flush two-column, no card-within-card */}
+                  <div style={{ flexShrink: 0, display: "flex", borderTop: `1px solid ${tGOLD_LINE}`, borderBottom: `1px solid ${tGOLD_LINE}` }}>
+                    {/* ADHAN column */}
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1.1vh 1.5vw", background: "rgba(234,179,8,0.05)", borderRight: "1px solid rgba(234,179,8,0.28)" }}>
+                      <div style={{ fontSize: "1vw", letterSpacing: "0.4em", color: "#fbbf24", fontWeight: 800, marginBottom: "0.4vh" }}>ADHAN</div>
                       <div style={{ display: "flex", alignItems: "flex-end", gap: "0.3vw" }}>
-                        <div style={{ fontFamily: CLOCK, fontSize: "5.8vw", lineHeight: 1, color: "#fbbf24" }}>{af.hm}</div>
-                        {af.ampm && <div style={{ fontSize: "1.5vw", color: "#fbbf24", fontWeight: 700, paddingBottom: "0.5vh" }}>{af.ampm}</div>}
+                        <div style={{ fontFamily: CLOCK, fontSize: "5.5vw", lineHeight: 1, color: "#fbbf24" }}>{af.hm}</div>
+                        {af.ampm && <div style={{ fontSize: "1.4vw", color: "#fbbf24", fontWeight: 700, paddingBottom: "0.4vh" }}>{af.ampm}</div>}
                       </div>
                     </div>
-                    {/* Arrow connector */}
-                    <div style={{ display: "flex", alignItems: "center", flexShrink: 0, opacity: 0.35 }}>
-                      <span style={{ fontSize: "1.2vw", color: tGOLD }}>→</span>
-                    </div>
-                    {/* IQAMAH */}
+                    {/* IQAMAH column */}
                     {iqamaEnabled && (
-                      <div style={{ flex: 1, borderRadius: "10px", background: "rgba(34,197,94,0.11)", border: "1px solid rgba(34,197,94,0.42)", display: "flex", flexDirection: "column", alignItems: "center", padding: "0.7vh 0.8vw" }}>
-                        <div style={{ fontSize: "1.2vw", letterSpacing: "0.3em", color: "#4ade80", fontWeight: 800, marginBottom: "0.3vh" }}>IQAMAH</div>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "1.1vh 1.5vw", background: "rgba(34,197,94,0.05)", borderLeft: "1px solid rgba(34,197,94,0.28)" }}>
+                        <div style={{ fontSize: "1vw", letterSpacing: "0.4em", color: "#4ade80", fontWeight: 800, marginBottom: "0.4vh" }}>IQAMAH</div>
                         <div style={{ display: "flex", alignItems: "flex-end", gap: "0.3vw" }}>
-                          <div style={{ fontFamily: CLOCK, fontSize: "5.8vw", lineHeight: 1, color: "#4ade80" }}>{qf.hm}</div>
-                          {qf.ampm && <div style={{ fontSize: "1.5vw", color: "#4ade80", fontWeight: 700, paddingBottom: "0.5vh" }}>{qf.ampm}</div>}
+                          <div style={{ fontFamily: CLOCK, fontSize: "5.5vw", lineHeight: 1, color: "#4ade80" }}>{qf.hm}</div>
+                          {qf.ampm && <div style={{ fontSize: "1.4vw", color: "#4ade80", fontWeight: 700, paddingBottom: "0.4vh" }}>{qf.ampm}</div>}
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Countdown */}
-                  <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "0.8vh" }}>
-                    <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 55%, ${pColor}22 0%, transparent 70%)`, pointerEvents: "none" }}/>
-                    <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8vh" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.6vw" }}>
-                        <IconClock size="1.4vw" color={cntColor}/>
-                        <span style={{ fontSize: "1.1vw", letterSpacing: "0.38em", fontWeight: 800, color: cntColor }}>
+                  <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "0.6vh" }}>
+                    <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 55%, ${pColor}18 0%, transparent 70%)`, pointerEvents: "none" }}/>
+                    <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6vh" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5vw" }}>
+                        <IconClock size="1.3vw" color={cntColor}/>
+                        <span style={{ fontSize: "1vw", letterSpacing: "0.35em", fontWeight: 800, color: cntColor }}>
                           {isIftarNext ? "TIME TO IFTAR" : "TIME TO ADHAN"}
                         </span>
                       </div>
@@ -1052,15 +1048,15 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                       <div style={{ display: "flex", alignItems: "flex-end" }}>
                         {[{ v: cH, l: "HRS" }, { v: cM, l: "MINS" }, { v: cS, l: "SECS" }].map(({ v, l }, i) => (
                           <div key={l} style={{ display: "flex", alignItems: "flex-end" }}>
-                            {i > 0 && <span style={{ fontFamily: CLOCK, color: cntColor, fontSize: "8.5vw", lineHeight: 1, paddingBottom: "1.8vh", opacity: 0.5 }}>:</span>}
+                            {i > 0 && <span style={{ fontFamily: CLOCK, color: cntColor, fontSize: "7.5vw", lineHeight: 1, paddingBottom: "1.5vh", opacity: 0.45 }}>:</span>}
                             <div style={{ textAlign: "center", padding: "0 0.5vw" }}>
-                              <div style={{ fontFamily: CLOCK, fontSize: "8.5vw", color: cntColor, lineHeight: 1 }}>{v}</div>
-                              <div style={{ fontSize: "0.95vw", color: tGOLD, letterSpacing: "0.22em", marginTop: "0.5vh" }}>{l}</div>
+                              <div style={{ fontFamily: CLOCK, fontSize: "7.5vw", color: cntColor, lineHeight: 1 }}>{v}</div>
+                              <div style={{ fontSize: "0.85vw", color: tGOLD, letterSpacing: "0.2em", marginTop: "0.3vh" }}>{l}</div>
                             </div>
                           </div>
                         ))}
                       </div>
-                      <div style={{ width: "55%", height: "1px", background: `linear-gradient(90deg,transparent,${cntColor}55,transparent)` }}/>
+                      <div style={{ width: "50%", height: "1px", background: `linear-gradient(90deg,transparent,${cntColor}44,transparent)` }}/>
                     </div>
                   </div>
                 </>
