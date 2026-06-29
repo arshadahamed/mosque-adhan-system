@@ -512,32 +512,49 @@ export function ClassicDisplayClient({ mosque, widget: initial }: Props) {
             const qf = fmtTime(p.iqamaTime, is24h);
             return (
               <div key={p.key} style={{
-                ...card, flex: 1, padding: "0.8vh 0.7vw", position: "relative",
+                ...card,
+                flex: isNext ? 1.35 : 1,
+                padding: isNext ? "1vh 0.9vw" : "0.8vh 0.7vw",
+                position: "relative",
                 display: "flex", flexDirection: "column", justifyContent: "space-between",
-                border: isNext ? `1px solid ${tGOLD}` : `1px solid ${tGOLD_DIM}`,
-                background: isNext ? "rgba(200,168,74,0.06)" : tCARD,
+                border: isNext ? `1.5px solid ${p.color}80` : `1px solid ${tGOLD_DIM}`,
+                background: isNext
+                  ? `linear-gradient(160deg,${p.color}18 0%,rgba(0,0,0,0) 55%),${tCARD}`
+                  : tCARD,
+                boxShadow: isNext ? `0 0 22px ${p.color}20` : "none",
+                transition: "flex 0.4s, border-color 0.4s",
               }}>
+                {/* Top colour strip for NEXT card */}
+                {isNext && (
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: `linear-gradient(90deg,${p.color},${p.color}80,transparent)`, borderRadius: "14px 14px 0 0", pointerEvents: "none" }}/>
+                )}
+                {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4vw" }}>
-                    {p.isDark ? <IconMoon size="1.6vw" color={p.color}/> : <IconSun size="1.6vw" color={p.color}/>}
-                    <div style={{ fontSize: "1.3vw", fontWeight: 900, letterSpacing: "0.08em" }}>{p.label}</div>
+                    {p.isDark
+                      ? <IconMoon size={isNext ? "2vw" : "1.6vw"} color={p.color}/>
+                      : <IconSun  size={isNext ? "2vw" : "1.6vw"} color={p.color}/>
+                    }
+                    <div style={{ fontSize: isNext ? "1.8vw" : "1.3vw", fontWeight: 900, letterSpacing: "0.08em" }}>{p.label}</div>
                   </div>
                   {isNext && (
-                    <span style={{ ...pill(tGREEN_DIM, tGREEN), fontSize: "0.75vw", padding: "0.2vh 0.7vw" }}>▶ NEXT</span>
+                    <span style={{ ...pill(`linear-gradient(90deg,${p.color}35,${p.color}18)`, p.color), fontSize: "0.9vw", padding: "0.3vh 0.9vw", border: `1px solid ${p.color}50` }}>▶ NEXT</span>
                   )}
                 </div>
-                <div style={{ height: "1px", background: `linear-gradient(90deg,${tGOLD_DIM},transparent)`, margin: "0.3vh 0" }}/>
+                {/* Divider */}
+                <div style={{ height: isNext ? "1.5px" : "1px", background: isNext ? `linear-gradient(90deg,${p.color}55,${p.color}15,transparent)` : `linear-gradient(90deg,${tGOLD_DIM},transparent)`, margin: "0.3vh 0" }}/>
+                {/* Times */}
                 <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
-                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${tGOLD_DIM}` }}>
-                    <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: tGREEN, marginBottom: "0.15vh" }}>ADHAN</div>
-                    <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1 }}>{af.hm}</div>
-                    <div style={{ fontSize: "0.88vw", color: tGOLD, fontWeight: 700, marginTop: "0.15vh" }}>{af.ampm}</div>
+                  <div style={{ flex: 1, textAlign: "center", borderRight: `1px solid ${isNext ? p.color + "30" : tGOLD_DIM}` }}>
+                    <div style={{ fontSize: isNext ? "1.05vw" : "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: "#fbbf24", marginBottom: "0.15vh" }}>ADHAN</div>
+                    <div style={{ fontFamily: CLOCK, fontSize: isNext ? "3.8vw" : "3.2vw", lineHeight: 1, color: "#fbbf24" }}>{af.hm}</div>
+                    <div style={{ fontSize: isNext ? "1vw" : "0.88vw", color: "#fbbf24", fontWeight: 700, marginTop: "0.15vh" }}>{af.ampm}</div>
                   </div>
                   {iqamaEnabled && (
                     <div style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{ fontSize: "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: tGOLD, marginBottom: "0.15vh" }}>IQAMAH</div>
-                      <div style={{ fontFamily: CLOCK, fontSize: "3.2vw", lineHeight: 1 }}>{qf.hm}</div>
-                      <div style={{ fontSize: "0.88vw", color: MUTED, fontWeight: 700, marginTop: "0.15vh" }}>{qf.ampm}</div>
+                      <div style={{ fontSize: isNext ? "1.05vw" : "0.78vw", fontWeight: 800, letterSpacing: "0.12em", color: "#4ade80", marginBottom: "0.15vh" }}>IQAMAH</div>
+                      <div style={{ fontFamily: CLOCK, fontSize: isNext ? "3.8vw" : "3.2vw", lineHeight: 1, color: "#4ade80" }}>{qf.hm}</div>
+                      <div style={{ fontSize: isNext ? "1vw" : "0.88vw", color: "#4ade80", fontWeight: 700, marginTop: "0.15vh" }}>{qf.ampm}</div>
                     </div>
                   )}
                 </div>
