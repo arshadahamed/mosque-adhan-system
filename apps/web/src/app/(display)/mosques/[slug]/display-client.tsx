@@ -965,101 +965,84 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
             {/* ── Prayer Name Hero ──────────────────────────────────────────── */}
             <div style={{
               position: "relative", overflow: "hidden", flexShrink: 0,
-              padding: "0.8vh 2vw 0.7vh",
+              padding: "1vh 2vw 0.9vh",
               background: isPreAdhan
-                ? "linear-gradient(135deg,rgba(120,60,0,0.4) 0%,rgba(0,0,0,0) 70%)"
-                : "linear-gradient(135deg,rgba(20,55,25,0.7) 0%,rgba(0,0,0,0) 70%)",
+                ? "linear-gradient(135deg,rgba(120,60,0,0.45) 0%,rgba(0,0,0,0) 65%)"
+                : "linear-gradient(135deg,rgba(20,55,25,0.75) 0%,rgba(0,0,0,0) 65%)",
               borderBottom: `1px solid ${tGOLD_DIM}`,
             }}>
-              <div style={{ position: "absolute", right: "-0.5vw", bottom: "-1.5vh", opacity: 0.06, pointerEvents: "none" }}>
-                <IconCrescent size="11vw" color={tGOLD}/>
+              <div style={{ position: "absolute", right: "-1vw", top: "-1vh", opacity: 0.06, pointerEvents: "none" }}>
+                <IconCrescent size="14vw" color={tGOLD}/>
               </div>
-              <div style={{ marginBottom: "0.3vh" }}>
-                <span style={pill(
-                  isPastLastPrayer
-                    ? `linear-gradient(90deg,#4b5563,#6b7280)`
-                    : isPreAdhan ? `linear-gradient(90deg,${AMBER},#fbbf24)` : `linear-gradient(90deg,${tGOLD},#e8c860)`,
-                  isPastLastPrayer ? WHITE : DARK
-                )}>
-                  {isPastLastPrayer ? "DAY PRAYER TIMES" : isPreAdhan ? "⚡ ADHAN APPROACHING" : "NEXT PRAYER"}
-                </span>
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ marginBottom: "0.4vh" }}>
+                  <span style={pill(
+                    isPastLastPrayer
+                      ? `linear-gradient(90deg,#4b5563,#6b7280)`
+                      : isPreAdhan ? `linear-gradient(90deg,${AMBER},#fbbf24)` : `linear-gradient(90deg,${tGOLD},#e8c860)`,
+                    isPastLastPrayer ? WHITE : DARK
+                  )}>
+                    {isPastLastPrayer ? "DAY PRAYER TIMES" : isPreAdhan ? "⚡ ADHAN APPROACHING" : "NEXT PRAYER"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "1.5vw" }}>
+                  <div style={{ fontFamily: MONO, fontSize: "5.5vw", fontWeight: 900, lineHeight: 0.9, letterSpacing: "0.02em", color: isPastLastPrayer ? MUTED : WHITE }}>
+                    {isPastLastPrayer ? "ISHA" : nextPray ? nextPray.label.toUpperCase() : "——"}
+                  </div>
+                  {nextData?.arabic && !isPastLastPrayer && (
+                    <div style={{ fontSize: "3vw", color: nextData.color, opacity: 0.85, fontFamily: "serif", lineHeight: 1 }}>
+                      {nextData.arabic}
+                    </div>
+                  )}
+                </div>
+                <div style={{
+                  height: "2px", width: "5vw", borderRadius: "2px", marginTop: "0.6vh",
+                  background: `linear-gradient(90deg,${isPreAdhan ? AMBER : (nextData?.color ?? tGOLD)},transparent)`,
+                }}/>
               </div>
-              <div style={{ fontFamily: MONO, fontSize: "5vw", fontWeight: 900, lineHeight: 0.9, letterSpacing: "0.02em", color: isPastLastPrayer ? MUTED : WHITE }}>
-                {isPastLastPrayer ? "ISHA" : nextPray ? nextPray.label.toUpperCase() : "——"}
-              </div>
-              <div style={{
-                height: "3px", width: "4vw", borderRadius: "2px", marginTop: "0.5vh",
-                background: `linear-gradient(90deg,${isPreAdhan ? AMBER : tGOLD},transparent)`,
-              }}/>
             </div>
 
             {/* ── Times + Countdown ─────────────────────────────────────────── */}
             {(() => {
               const af = fmtTime(nextData?.adhan, is24h);
               const qf = fmtTime(nextData?.iqamaTime, is24h);
+              const cntColor = isIftarNext ? ORANGE : RED;
+              const pColor   = nextData?.color ?? tGOLD;
               return (
-                <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-
-                  {/* LEFT — ADHAN + IQAMAH */}
-                  <div style={{
-                    width: "44%", flexShrink: 0,
-                    padding: "0.8vh 1vw",
-                    display: "flex", flexDirection: "column",
-                    gap: "0.4vh",
-                    borderRight: `1px solid ${tGOLD_LINE}`,
-                  }}>
-                    {/* ADHAN slot — flex:1 fills half the height */}
-                    <div style={{
-                      flex: 1,
-                      background: "rgba(234,179,8,0.13)",
-                      border: `1px solid rgba(234,179,8,0.45)`,
-                      borderRadius: "10px", overflow: "hidden",
-                      display: "flex", alignItems: "stretch",
-                    }}>
-                      <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGOLD, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>ADHAN</div>
-                      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
-                        <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: tGOLD }}>{af.hm}</div>
-                        {af.ampm && <div style={{ fontSize: "2vw", color: tGOLD, fontWeight: 700 }}>{af.ampm}</div>}
+                <>
+                  {/* ADHAN + IQAMAH horizontal row */}
+                  <div style={{ flexShrink: 0, padding: "0.8vh 1.2vw", display: "flex", gap: "0.8vw", borderBottom: `1px solid ${tGOLD_LINE}` }}>
+                    {/* ADHAN */}
+                    <div style={{ flex: 1, borderRadius: "10px", background: "rgba(234,179,8,0.11)", border: "1px solid rgba(234,179,8,0.42)", display: "flex", flexDirection: "column", alignItems: "center", padding: "0.7vh 0.8vw" }}>
+                      <div style={{ fontSize: "0.85vw", letterSpacing: "0.45em", color: tGOLD, fontWeight: 800, marginBottom: "0.3vh" }}>ADHAN</div>
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: "0.3vw" }}>
+                        <div style={{ fontFamily: CLOCK, fontSize: "5.8vw", lineHeight: 1, color: tGOLD }}>{af.hm}</div>
+                        {af.ampm && <div style={{ fontSize: "1.5vw", color: tGOLD, fontWeight: 700, paddingBottom: "0.5vh" }}>{af.ampm}</div>}
                       </div>
                     </div>
-
+                    {/* Arrow connector */}
+                    <div style={{ display: "flex", alignItems: "center", flexShrink: 0, opacity: 0.35 }}>
+                      <span style={{ fontSize: "1.2vw", color: tGOLD }}>→</span>
+                    </div>
+                    {/* IQAMAH */}
                     {iqamaEnabled && (
-                      <>
-                        {/* Connector */}
-                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", opacity: 0.35, height: "1.4vh" }}>
-                          <span style={{ fontSize: "0.8vw", color: tGOLD }}>↓</span>
+                      <div style={{ flex: 1, borderRadius: "10px", background: "rgba(34,197,94,0.11)", border: "1px solid rgba(34,197,94,0.42)", display: "flex", flexDirection: "column", alignItems: "center", padding: "0.7vh 0.8vw" }}>
+                        <div style={{ fontSize: "0.85vw", letterSpacing: "0.45em", color: tGREEN, fontWeight: 800, marginBottom: "0.3vh" }}>IQAMAH</div>
+                        <div style={{ display: "flex", alignItems: "flex-end", gap: "0.3vw" }}>
+                          <div style={{ fontFamily: CLOCK, fontSize: "5.8vw", lineHeight: 1, color: tGREEN }}>{qf.hm}</div>
+                          {qf.ampm && <div style={{ fontSize: "1.5vw", color: tGREEN, fontWeight: 700, paddingBottom: "0.5vh" }}>{qf.ampm}</div>}
                         </div>
-                        {/* IQAMAH slot */}
-                        <div style={{
-                          flex: 1,
-                          background: "rgba(34,197,94,0.13)",
-                          border: `1px solid rgba(34,197,94,0.45)`,
-                          borderRadius: "10px", overflow: "hidden",
-                          display: "flex", alignItems: "stretch",
-                        }}>
-                          <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "1vw", letterSpacing: "0.35em", color: DARK, fontWeight: 900, background: tGREEN, padding: "0 0.45vw", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>IQAMAH</div>
-                          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5vw" }}>
-                            <div style={{ fontFamily: CLOCK, fontSize: "7vw", lineHeight: 1, color: tGREEN }}>{qf.hm}</div>
-                            {qf.ampm && <div style={{ fontSize: "2vw", color: tGREEN, fontWeight: 700 }}>{qf.ampm}</div>}
-                          </div>
-                        </div>
-                      </>
+                      </div>
                     )}
                   </div>
 
-                  {/* RIGHT — Countdown hero */}
-                  <div style={{
-                    flex: 1, position: "relative", overflow: "hidden",
-                    display: "flex", flexDirection: "column",
-                    justifyContent: "center", alignItems: "center",
-                    gap: "1vh",
-                  }}>
-                    {/* Subtle radial glow — less heavy than a flat tint */}
-                    <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 55%, rgba(239,68,68,0.13) 0%, transparent 72%)", pointerEvents: "none" }}/>
+                  {/* Countdown */}
+                  <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "0.8vh" }}>
+                    <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at 50% 55%, ${pColor}22 0%, transparent 70%)`, pointerEvents: "none" }}/>
                     <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8vh" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.6vw" }}>
-                        <IconClock size="1.6vw" color={isIftarNext ? ORANGE : RED}/>
-                        <span style={{ fontSize: "1.2vw", letterSpacing: "0.38em", fontWeight: 800, color: isIftarNext ? ORANGE : RED }}>
+                        <IconClock size="1.4vw" color={cntColor}/>
+                        <span style={{ fontSize: "1.1vw", letterSpacing: "0.38em", fontWeight: 800, color: cntColor }}>
                           {isIftarNext ? "TIME TO IFTAR" : "TIME TO ADHAN"}
                         </span>
                       </div>
@@ -1069,21 +1052,18 @@ export function DisplayClient({ mosque, widget: initial }: Props) {
                       <div style={{ display: "flex", alignItems: "flex-end" }}>
                         {[{ v: cH, l: "HRS" }, { v: cM, l: "MINS" }, { v: cS, l: "SECS" }].map(({ v, l }, i) => (
                           <div key={l} style={{ display: "flex", alignItems: "flex-end" }}>
-                            {i > 0 && (
-                              <span style={{ fontFamily: CLOCK, color: isIftarNext ? ORANGE : RED, fontSize: "9vw", lineHeight: 1, paddingBottom: "1.8vh", opacity: 0.5 }}>:</span>
-                            )}
-                            <div style={{ textAlign: "center", padding: "0 0.4vw" }}>
-                              <div style={{ fontFamily: CLOCK, fontSize: "9vw", color: isIftarNext ? ORANGE : RED, lineHeight: 1 }}>{v}</div>
-                              <div style={{ fontSize: "1vw", color: tGOLD, letterSpacing: "0.22em", marginTop: "0.5vh" }}>{l}</div>
+                            {i > 0 && <span style={{ fontFamily: CLOCK, color: cntColor, fontSize: "8.5vw", lineHeight: 1, paddingBottom: "1.8vh", opacity: 0.5 }}>:</span>}
+                            <div style={{ textAlign: "center", padding: "0 0.5vw" }}>
+                              <div style={{ fontFamily: CLOCK, fontSize: "8.5vw", color: cntColor, lineHeight: 1 }}>{v}</div>
+                              <div style={{ fontSize: "0.95vw", color: tGOLD, letterSpacing: "0.22em", marginTop: "0.5vh" }}>{l}</div>
                             </div>
                           </div>
                         ))}
                       </div>
-                      <div style={{ width: "60%", height: "1px", background: `linear-gradient(90deg,transparent,${isIftarNext ? ORANGE : RED}44,transparent)` }}/>
+                      <div style={{ width: "55%", height: "1px", background: `linear-gradient(90deg,transparent,${cntColor}55,transparent)` }}/>
                     </div>
                   </div>
-
-                </div>
+                </>
               );
             })()}
           </div>
